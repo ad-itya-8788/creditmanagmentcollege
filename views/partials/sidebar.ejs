@@ -1,0 +1,43 @@
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'">
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Main Menu</div>
+
+        <a href="/dashboard" class="sidebar-item <%= (typeof active !== 'undefined' && active === 'dashboard') ? 'active' : '' %>">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a href="/customers" class="sidebar-item <%= (typeof active !== 'undefined' && active === 'customers') ? 'active' : '' %>">
+            <i class="fas fa-users"></i>
+            <span>Customers</span>
+        </a>
+
+        <a href="/customers/adcm" class="sidebar-item add-item">
+            <i class="fas fa-user-plus"></i>
+            <span>Add Customer</span>
+        </a>
+
+        <div class="sidebar-divider"></div>
+
+        <a href="/report" class="sidebar-item <%= (typeof active !== 'undefined' && active === 'report') ? 'active' : '' %>">
+            <i class="fas fa-chart-bar"></i>
+            <span>Reports</span>
+        </a>
+
+        <a href="/settings" class="sidebar-item <%= (typeof active !== 'undefined' && active === 'settings') ? 'active' : '' %>">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="/logout" class="sidebar-logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Log Out</span>
+        </a>
+    </div>
+</aside>

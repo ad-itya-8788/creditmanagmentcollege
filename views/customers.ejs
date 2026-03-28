@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - AgriCRM</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f7f8fa; color: #111827; font-size: 13px; }
+
+        .header {
+            background: #fff; border-bottom: 1px solid #e5e7eb;
+            padding: 0 1.25rem; height: 52px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .header-logo { height: 32px; object-fit: contain; }
+        .hdr-logout {
+            background: #fef2f2; border: none; color: #dc2626;
+            width: 34px; height: 34px; border-radius: 7px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; text-decoration: none;
+        }
+        .hdr-logout:hover { background: #fde8e8; }
+
+        .toolbar {
+            background: #fff; border-bottom: 1px solid #e5e7eb;
+            padding: 0.6rem 1.25rem;
+            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        }
+        .search-box {
+            display: flex; align-items: center; background: #f9fafb;
+            border-radius: 7px; padding: 0.38rem 0.75rem; gap: 0.4rem;
+            border: 1px solid #e5e7eb; flex: 1; min-width: 180px;
+        }
+        .search-box i { color: #9ca3af; font-size: 0.78rem; }
+        .search-box input {
+            border: none; outline: none; font-size: 0.8rem;
+            font-family: 'Poppins', sans-serif; width: 100%; background: transparent;
+        }
+        .stats-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+        .stat-pill {
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;
+            padding: 0.22rem 0.6rem; display: flex; align-items: center; gap: 0.3rem;
+            white-space: nowrap;
+        }
+        .stat-pill.red { background: #fef2f2; border-color: #fecaca; }
+        .stat-pill .pv { font-size: 0.8rem; font-weight: 700; color: #1a6b3c; }
+        .stat-pill.red .pv { color: #dc2626; }
+        .stat-pill .pl { font-size: 0.68rem; color: #374151; font-weight: 600; }
+        .btn-add {
+            background: linear-gradient(135deg, #1a6b3c, #2d9e5f); color: white;
+            padding: 0.38rem 0.85rem; border-radius: 7px; text-decoration: none;
+            font-weight: 600; font-size: 0.78rem;
+            display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;
+        }
+        .btn-add:hover { opacity: 0.9; }
+
+        .table-wrap { padding: 1rem 1.25rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .cust-table {
+            width: 100%; min-width: 580px; border-collapse: collapse; background: #fff;
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+        }
+        .cust-table thead tr { background: #f0fdf4; }
+        .cust-table th {
+            padding: 0.55rem 0.85rem; text-align: left;
+            font-size: 0.68rem; font-weight: 700; color: #111827;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 2px solid #d1fae5;
+            border-right: 1px solid #e5e7eb; white-space: nowrap;
+        }
+        .cust-table th:last-child { border-right: none; }
+        .cust-table td {
+            padding: 0.5rem 0.85rem; font-size: 0.8rem;
+            border-bottom: 1px solid #f3f4f6;
+            border-right: 1px solid #f3f4f6; vertical-align: middle;
+        }
+        .cust-table td:last-child { border-right: none; }
+        .cust-table tbody tr:hover { background: #fafafa; cursor: pointer; }
+        .cust-table tbody tr:last-child td { border-bottom: none; }
+
+        .td-num { color: #6b7280; font-size: 0.72rem; text-align: center; font-weight: 600; }
+        .td-name { font-weight: 700; color: #111827; }
+        .td-phone { color: #111827; font-size: 0.78rem; font-weight: 600; }
+        .td-village { color: #374151; font-size: 0.78rem; font-weight: 500; }
+        .td-pending { font-weight: 700; color: #dc2626; font-size: 0.8rem; }
+        .td-clear { font-weight: 700; color: #16a34a; font-size: 0.75rem; }
+        .td-txn { text-align: center; color: #374151; font-weight: 600; }
+
+        .badge { display: inline-block; padding: 0.16rem 0.5rem; border-radius: 20px; font-size: 0.65rem; font-weight: 700; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        .btn-view {
+            padding: 0.22rem 0.6rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+            background: #f0fdf4; color: #1a6b3c; border: 1px solid #bbf7d0;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;
+            white-space: nowrap; transition: all 0.15s;
+        }
+        .btn-view:hover { background: #1a6b3c; color: white; }
+
+        .empty-state {
+            text-align: center; padding: 3rem 2rem; background: #fff;
+            border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        }
+
+    </style>
+</head>
+<body class="sidebar-layout">
+
+<%- include('partials/sidebar', {active: 'customers'}) %>
+
+<div class="page-topbar">
+    <div class="page-topbar-title"><i class="fas fa-users"></i> Customers</div>
+    <div class="page-topbar-right">
+        <a href="/customers/adcm" style="background:linear-gradient(135deg,#1a6b3c,#2d9e5f);color:white;padding:6px 14px;border-radius:7px;text-decoration:none;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-plus"></i> Add Customer</a>
+    </div>
+</div>
+
+<%
+    const totalCustomers = customers.length;
+    const totalPendingAmt = customers.reduce((sum, c) => sum + (parseFloat(c.total_pending_amount) || 0), 0);
+    const pendingCount = customers.filter(c => parseFloat(c.total_pending_amount) > 0).length;
+%>
+
+<div class="toolbar">
+    <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search by name or phone..." oninput="filterCustomers()">
+    </div>
+    <div class="stats-row">
+        <div class="stat-pill">
+            <span class="pv"><%= totalCustomers %></span>
+            <span class="pl">Total</span>
+        </div>
+        <div class="stat-pill red">
+            <span class="pv"><%= pendingCount %></span>
+            <span class="pl">Pending</span>
+        </div>
+        <div class="stat-pill red">
+            <span class="pv">₹<%= totalPendingAmt.toLocaleString('en-IN') %></span>
+            <span class="pl">Due</span>
+        </div>
+    </div>
+    <a href="/customers/adcm" class="btn-add"><i class="fas fa-plus"></i> Add Customer</a>
+</div>
+
+<div class="table-wrap">
+<% if (customers.length === 0) { %>
+    <div class="empty-state">
+        <i class="fas fa-user-friends" style="font-size:2.5rem;color:#d1d5db;margin-bottom:1rem;display:block;"></i>
+        <h3 style="font-size:1rem;color:#6b7280;margin-bottom:0.5rem;">No customers yet</h3>
+        <p style="font-size:0.82rem;color:#9ca3af;margin-bottom:1.25rem;">Add your first customer to start managing credit.</p>
+        <a href="/customers/adcm" class="btn-add"><i class="fas fa-plus"></i> Add Customer</a>
+    </div>
+<% } else { %>
+<table class="cust-table">
+    <thead>
+        <tr>
+            <th style="width:36px;text-align:center;">#</th>
+            <th>Customer Name</th>
+            <th>Mobile</th>
+            <th>Village / City</th>
+            <th>Pending Amount</th>
+            <th style="text-align:center;">Status</th>
+            <th style="text-align:center;">Action</th>
+        </tr>
+    </thead>
+    <tbody id="customerList">
+    <% customers.forEach((c, i) => {
+        const pending = parseFloat(c.total_pending_amount) || 0;
+        const hasPending = pending > 0;
+    %>
+    <tr data-name="<%= c.name.toLowerCase() %>" data-mobile="<%= c.mobile_number %>" onclick="window.location='/customers/report/<%= c.id %>'" style="cursor:pointer;">
+        <td class="td-num"><%= i + 1 %></td>
+        <td class="td-name"><%= c.name %></td>
+        <td class="td-phone"><%= c.mobile_number %></td>
+        <td class="td-village"><%= c.village_city || '-' %></td>
+        <td>
+            <% if (hasPending) { %>
+            <span class="td-pending">₹<%= pending.toLocaleString('en-IN') %></span>
+            <% } else { %>
+            <span class="td-clear"><i class="fas fa-check"></i> Cleared</span>
+            <% } %>
+        </td>
+        <td style="text-align:center;">
+            <span class="badge <%= hasPending ? 'badge-red' : 'badge-green' %>">
+                <%= hasPending ? 'Pending' : 'Clear' %>
+            </span>
+        </td>
+        <td style="text-align:center;" onclick="event.stopPropagation()">
+            <a href="/customers/report/<%= c.id %>" class="btn-view">
+                <i class="fas fa-eye"></i> View
+            </a>
+        </td>
+    </tr>
+    <% }) %>
+    </tbody>
+</table>
+<% } %>
+</div>
+
+
+<script>
+function filterCustomers() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('#customerList tr').forEach(row => {
+        const name = row.dataset.name || '';
+        const mobile = row.dataset.mobile || '';
+        row.style.display = (name.includes(q) || mobile.includes(q)) ? '' : 'none';
+    });
+}
+</script>
+</body>
+</html>

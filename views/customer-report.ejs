@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= customer.name %> - Report | AgriCrm</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; color: #333; }
+
+        /* Header */
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1rem;
+            height: 52px;
+            display: flex; align-items: center; gap: 0.75rem;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .back-btn {
+            background: #f3f4f6; border: none; color: #374151;
+            width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; flex-shrink: 0; text-decoration: none;
+        }
+        .back-btn:hover { background: #e5e7eb; }
+        .header-title { font-size: 0.92rem; font-weight: 700; color: #111; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .btn-add-tx {
+            background: #1a6b3c; border: none; color: white;
+            padding: 0.45rem 0.85rem; border-radius: 8px; cursor: pointer;
+            font-size: 0.78rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+            display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;
+        }
+        .btn-add-tx:hover { background: #155e34; }
+
+        /* Info card */
+        .info-card {
+            margin: 1rem; border-radius: 14px; background: white;
+            padding: 1.1rem 1.25rem; box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+        .info-row { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.5rem; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-icon { color: #2d9e5f; margin-top: 2px; width: 16px; font-size: 0.8rem; }
+        .info-text { font-size: 0.82rem; color: #374151; line-height: 1.4; font-weight: 500; }
+
+        /* Score + stats */
+        .score-bar-wrap { margin: 0 1rem; }
+        .score-card {
+            background: white; border-radius: 14px; padding: 1rem 1.25rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 0.75rem;
+        }
+        .score-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+        .score-title { font-size: 0.8rem; color: #374151; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .score-value { font-size: 1.6rem; font-weight: 700; }
+        .score-label { font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; }
+        .score-track { height: 8px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .score-fill { height: 100%; border-radius: 10px; transition: width 0.6s; }
+
+        .stats-row { display: flex; gap: 0.6rem; margin: 0 1rem 0.75rem; }
+        .stat-box {
+            flex: 1; background: white; border-radius: 12px;
+            padding: 0.75rem 0.5rem; text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-val { font-size: 0.9rem; font-weight: 700; color: #1a6b3c; display: block; margin-bottom: 0.2rem; }
+        .stat-lbl { font-size: 0.62rem; color: #374151; line-height: 1.3; font-weight: 600; }
+
+        /* Section label */
+        .section-label {
+            margin: 0.25rem 1rem 0.5rem;
+            font-size: 0.78rem; font-weight: 700; color: #374151;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+
+        /* Transaction card */
+        .tx-card {
+            background: white; border-radius: 14px; margin: 0 1rem 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07); overflow: hidden;
+            border-top: 3px solid #2d9e5f;
+        }
+        .tx-card.pending-tx { border-top-color: #e74c3c; }
+        .tx-card.partial-tx { border-top-color: #f39c12; }
+
+        .tx-header { padding: 0.9rem 1rem 0; }
+        .tx-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.4rem; }
+        .tx-product { font-size: 0.95rem; font-weight: 700; color: #222; }
+        .tx-date-line { font-size: 0.72rem; color: #374151; margin-top: 0.15rem; font-weight: 600; }
+
+        .badge-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+        .badge {
+            font-size: 0.64rem; font-weight: 700; padding: 0.18rem 0.5rem;
+            border-radius: 10px; text-transform: uppercase;
+        }
+        .badge.paid { background: #e8f5e9; color: #1a6b3c; }
+        .badge.partial { background: #fff3e0; color: #e65100; }
+        .badge.pending { background: #fde8e8; color: #c0392b; }
+        .badge.type { background: #e3f2fd; color: #1565c0; }
+        .badge.overdue { background: #fde8e8; color: #c0392b; }
+
+        /* Amount row */
+        .amount-row { display: flex; gap: 0.5rem; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.78rem; }
+        .amt-item { text-align: center; }
+        .amt-val { font-weight: 700; font-size: 0.9rem; display: block; }
+        .amt-lbl { color: #374151; font-size: 0.67rem; font-weight: 600; }
+        .amt-val.green { color: #1a6b3c; }
+        .amt-val.red { color: #c0392b; }
+        .amt-val.blue { color: #1565c0; }
+
+        /* Progress bar */
+        .progress-wrap { padding: 0 1rem 0.75rem; }
+        .progress-track { height: 6px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #1a6b3c, #2d9e5f); }
+        .progress-label { font-size: 0.65rem; color: #374151; margin-top: 0.25rem; font-weight: 600; }
+
+        /* Payment History section */
+        .pay-history { border-top: 1px solid #f3f3f3; }
+        .pay-history-header {
+            padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 700;
+            color: #111827; display: flex; align-items: center; justify-content: space-between; font-weight: 600;
+            cursor: pointer; user-select: none;
+        }
+        .pay-history-header:hover { background: #fafafa; }
+        .pay-history-title { display: flex; align-items: center; gap: 0.4rem; }
+        .pay-history-body { padding: 0 1rem 0.5rem; display: none; }
+        .pay-history-body.open { display: block; }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: 1.5rem; }
+        .timeline::before { content: ''; position: absolute; left: 0.45rem; top: 0; bottom: 0; width: 2px; background: #e8f5e9; }
+        .tl-item { position: relative; margin-bottom: 0.8rem; }
+        .tl-item:last-child { margin-bottom: 0; }
+        .tl-dot {
+            position: absolute; left: -1.2rem; top: 0.2rem;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #2d9e5f; border: 2px solid white;
+            box-shadow: 0 0 0 2px #2d9e5f;
+        }
+        .tl-date { font-size: 0.7rem; color: #374151; font-weight: 700; margin-bottom: 0.1rem; }
+        .tl-amount { font-size: 0.9rem; font-weight: 700; color: #1a6b3c; }
+        .tl-notes { font-size: 0.7rem; color: #374151; margin-top: 0.1rem; font-weight: 500; }
+        .tl-loading { font-size: 0.75rem; color: #6b7280; padding: 0.5rem 0; }
+        .tl-empty { font-size: 0.75rem; color: #6b7280; font-style: italic; padding: 0.3rem 0; }
+
+        /* Add Payment form */
+        .add-pay-section { border-top: 1px solid #f0f0f0; padding: 0.8rem 1rem; background: #fffbf0; }
+        .add-pay-title { font-size: 0.8rem; font-weight: 700; color: #e65100; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.35rem; }
+        .pay-form { display: flex; flex-direction: column; gap: 0.6rem; }
+        .pay-form-row { display: flex; gap: 0.6rem; }
+        .form-group { flex: 1; }
+        .form-group label { font-size: 0.7rem; color: #111827; font-weight: 700; display: block; margin-bottom: 0.3rem; }
+        .form-group input, .form-group textarea {
+            width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px;
+            padding: 0.55rem 0.7rem; font-size: 0.82rem; font-family: 'Poppins', sans-serif;
+            outline: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: #2d9e5f; }
+        .form-group textarea { resize: none; height: 48px; }
+        .remaining-hint { font-size: 0.7rem; color: #e74c3c; font-weight: 600; margin-top: 0.1rem; }
+        .btn-record {
+            background: linear-gradient(135deg, #1a6b3c, #2d9e5f); color: white;
+            border: none; border-radius: 8px; padding: 0.65rem;
+            font-size: 0.85rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        .btn-record:hover { opacity: 0.9; }
+        .btn-record:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Delete transaction */
+        .tx-footer { padding: 0.5rem 1rem; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; }
+        .btn-del {
+            background: none; border: none; color: #ddd; cursor: pointer;
+            font-size: 0.72rem; display: flex; align-items: center; gap: 0.3rem;
+            padding: 0.3rem 0.5rem; border-radius: 6px; font-family: 'Poppins', sans-serif;
+        }
+        .btn-del:hover { color: #e74c3c; background: #fde8e8; }
+
+        /* Overdue banner */
+        .overdue-banner {
+            margin: 0 1rem; padding: 0.6rem 0.9rem;
+            background: #fde8e8; border-radius: 10px;
+            font-size: 0.75rem; color: #c0392b; font-weight: 600;
+            display: flex; align-items: center; gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+
+        /* Add Transaction Modal */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: flex-end; }
+        .overlay.open { display: flex; }
+        @media (min-width: 768px) {
+            .overlay { left: 220px; }
+        }
+        .modal-sheet {
+            background: white; border-radius: 20px 20px 0 0; width: 100%; padding: 1.25rem 1.25rem 2rem;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-handle { width: 36px; height: 4px; background: #e0e0e0; border-radius: 10px; margin: 0 auto 1rem; }
+        .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1.1rem; color: #1a6b3c; }
+        .modal-form .form-group { margin-bottom: 0.75rem; }
+        .modal-form label { font-size: 0.78rem; color: #111827; font-weight: 700; display: block; margin-bottom: 0.35rem; }
+        .modal-form input, .modal-form select, .modal-form textarea {
+            width: 100%; border: 1.5px solid #e0e0e0; border-radius: 10px;
+            padding: 0.65rem 0.9rem; font-size: 0.88rem; font-family: 'Poppins', sans-serif; outline: none;
+        }
+        .modal-form input:focus, .modal-form select:focus, .modal-form textarea:focus { border-color: #2d9e5f; }
+        .modal-form textarea { resize: none; height: 56px; }
+        .hint-box { padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.76rem; margin-bottom: 0.75rem; line-height: 1.5; }
+        .hint-green { background: #e8f5e9; color: #1a6b3c; border-left: 3px solid #2d9e5f; }
+        .hint-orange { background: #fff3e0; color: #e65100; border-left: 3px solid #f39c12; }
+        .hint-red { background: #fde8e8; color: #c0392b; border-left: 3px solid #e74c3c; }
+        .btn-submit {
+            background: linear-gradient(135deg, #1a6b3c, #2d9e5f); color: white;
+            border: none; border-radius: 10px; padding: 0.8rem;
+            font-size: 0.9rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; width: 100%; margin-top: 0.5rem;
+        }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Toast */
+        .toast-msg {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: #1a6b3c; color: white; padding: 0.7rem 1.4rem;
+            border-radius: 30px; font-size: 0.83rem; font-weight: 600;
+            z-index: 999; opacity: 0; transition: opacity 0.3s;
+            white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .toast-msg.error { background: #c0392b; }
+        .toast-msg.show { opacity: 1; }
+    </style>
+</head>
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'customers'}) %>
+
+<%
+    const CUSTOMER_ID = customer.id;
+    const totalAmt = parseFloat(stats.total_amount) || 0;
+    const totalPaid = parseFloat(stats.total_paid) || 0;
+    const totalPending = parseFloat(stats.total_pending_amount) || 0;
+    const score = stats.cibil_score || 500;
+    const scoreColor = score >= 750 ? '#1a6b3c' : score >= 600 ? '#2d9e5f' : score >= 450 ? '#f39c12' : '#e74c3c';
+    const scoreLabel = score >= 750 ? 'Excellent' : score >= 600 ? 'Good' : score >= 450 ? 'Average' : 'Poor';
+    const scorePct = Math.round(((score - 300) / 600) * 100);
+
+    // Count overdue transactions
+    const now = new Date();
+    const overdueCount = transactions.filter(tx => {
+        if (tx.status === 'completed') return false;
+        if (!tx.next_payment_date) return false;
+        return new Date(tx.next_payment_date) < now;
+    }).length;
+%>
+
+<div class="page-topbar">
+    <div class="page-topbar-title">
+        <a href="/customers" style="color:#6b7280;text-decoration:none;margin-right:8px;"><i class="fas fa-arrow-left"></i></a>
+        <i class="fas fa-file-alt"></i> <%= customer.name %>
+    </div>
+    <div class="page-topbar-right">
+        <button class="btn-add-tx" onclick="openAddTx()"><i class="fas fa-plus"></i> Add Sale</button>
+    </div>
+</div>
+
+<!-- Customer Info Card -->
+<div class="info-card">
+    <div class="info-row">
+        <i class="fas fa-map-marker-alt info-icon"></i>
+        <span class="info-text"><%= customer.location || (customer.village_city + ', ' + customer.district + ', ' + customer.state) %></span>
+    </div>
+    <% if (customer.complete_address) { %>
+    <div class="info-row">
+        <i class="fas fa-home info-icon"></i>
+        <span class="info-text"><%= customer.complete_address %></span>
+    </div>
+    <% } %>
+    <div class="info-row">
+        <i class="fas fa-calendar-alt info-icon"></i>
+        <span class="info-text">Customer since <%= new Date(customer.created_at).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) %></span>
+    </div>
+</div>
+
+<!-- Credit Score -->
+<div class="score-bar-wrap">
+    <div class="score-card">
+        <div class="score-header">
+            <span class="score-title"><i class="fas fa-star" style="color:#f39c12;margin-right:4px;"></i> Agri Credit Score</span>
+            <span class="score-label" style="background:<%= scoreColor %>22;color:<%= scoreColor %>"><%= scoreLabel %></span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.5rem;">
+            <span class="score-value" style="color:<%= scoreColor %>"><%= score %></span>
+            <span style="font-size:0.72rem;color:#aaa;">/ 900</span>
+        </div>
+        <div class="score-track"><div class="score-fill" style="width:<%= scorePct %>%;background:<%= scoreColor %>"></div></div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+    <div class="stat-box">
+        <span class="stat-val blue">₹<%= totalAmt.toLocaleString('en-IN') %></span>
+        <span class="stat-lbl">Total Credit</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val green">₹<%= totalPaid.toLocaleString('en-IN') %></span>
+        <span class="stat-lbl">Total Paid</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val" style="color:<%= totalPending > 0 ? '#c0392b' : '#1a6b3c' %>">₹<%= totalPending.toLocaleString('en-IN') %></span>
+        <span class="stat-lbl">Still Pending</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-val"><%= stats.total_transactions || 0 %></span>
+        <span class="stat-lbl">Transactions</span>
+    </div>
+</div>
+
+<% if (overdueCount > 0) { %>
+<div class="overdue-banner">
+    <i class="fas fa-exclamation-triangle"></i>
+    <%= overdueCount %> overdue transaction<%= overdueCount > 1 ? 's' : '' %> — payment date passed
+</div>
+<% } %>
+
+<!-- Transactions (latest first) -->
+<div class="section-label">
+    <i class="fas fa-receipt"></i>
+    Transaction History (<%= transactions.length %>)
+</div>
+
+<% if (transactions.length === 0) { %>
+<div style="text-align:center;padding:2rem 1rem;color:#bbb;font-size:0.85rem;">
+    <i class="fas fa-receipt" style="font-size:2rem;display:block;margin-bottom:0.7rem;"></i>
+    No transactions yet. Add the first sale above.
+</div>
+<% } %>
+
+<% transactions.forEach((tx, idx) => {
+    const txTotal = parseFloat(tx.total_amount) || 0;
+    const txPaid = parseFloat(tx.paid_amount) || 0;
+    const txRemaining = parseFloat(tx.remaining_amount) || 0;
+    const pctPaid = txTotal > 0 ? Math.round((txPaid / txTotal) * 100) : 0;
+    const isCompleted = tx.status === 'completed' || txRemaining === 0;
+    const isPartial = !isCompleted && txPaid > 0;
+    const isPending = !isCompleted && txPaid === 0;
+    const isOverdue = !isCompleted && tx.next_payment_date && new Date(tx.next_payment_date) < now;
+
+    let cardClass = '';
+    if (!isCompleted && isOverdue) cardClass = 'pending-tx';
+    else if (isPartial) cardClass = 'partial-tx';
+    else if (!isCompleted) cardClass = 'pending-tx';
+
+    let statusLabel = 'UDHAAR';
+    let statusClass = 'pending';
+    if (isCompleted) { statusLabel = 'PAID'; statusClass = 'paid'; }
+    else if (isPartial) { statusLabel = 'PARTIAL'; statusClass = 'partial'; }
+
+    let typeLabel = '';
+    let typeClass = 'type';
+    if (tx.transaction_type === 'full_payment') { typeLabel = 'Full Payment'; }
+    else if (tx.transaction_type === 'installment') { typeLabel = 'Installment'; }
+    else { typeLabel = 'Credit / Udhaar'; }
+
+    const txDate = tx.payment_date ? new Date(tx.payment_date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+    const nextDate = tx.next_payment_date ? new Date(tx.next_payment_date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : null;
+%>
+<div class="tx-card <%= cardClass %>" id="txcard-<%= tx.id %>">
+    <div class="tx-header">
+        <div class="tx-top">
+            <div>
+                <div class="tx-product"><%= tx.product_service || 'Product/Service' %></div>
+                <div class="tx-date-line"><i class="fas fa-calendar" style="margin-right:3px;"></i> Sale Date: <%= txDate %></div>
+            </div>
+        </div>
+        <div class="badge-row">
+            <span class="badge <%= statusClass %>"><i class="fas fa-circle" style="font-size:0.5rem;"></i> <%= statusLabel %></span>
+            <span class="badge type"><%= typeLabel %></span>
+            <% if (isOverdue) { %><span class="badge overdue"><i class="fas fa-clock"></i> Overdue</span><% } %>
+        </div>
+        <!-- Amount summary -->
+        <div class="amount-row">
+            <div class="amt-item">
+                <span class="amt-val blue">₹<%= txTotal.toLocaleString('en-IN') %></span>
+                <span class="amt-lbl">Total</span>
+            </div>
+            <div class="amt-item">
+                <span class="amt-val green">₹<%= txPaid.toLocaleString('en-IN') %></span>
+                <span class="amt-lbl">Paid</span>
+            </div>
+            <div class="amt-item">
+                <span class="amt-val <%= txRemaining > 0 ? 'red' : 'green' %>">₹<%= txRemaining.toLocaleString('en-IN') %></span>
+                <span class="amt-lbl">Remaining</span>
+            </div>
+            <% if (nextDate && !isCompleted) { %>
+            <div class="amt-item">
+                <span class="amt-val" style="font-size:0.75rem;color:<%= isOverdue ? '#c0392b' : '#555' %>"><%= nextDate %></span>
+                <span class="amt-lbl">Next Pay</span>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap">
+        <div class="progress-track">
+            <div class="progress-fill" style="width:<%= pctPaid %>%;background:<%= isCompleted ? '#1a6b3c' : isPartial ? '#f39c12' : '#e74c3c' %>"></div>
+        </div>
+        <div class="progress-label"><%= pctPaid %>% paid</div>
+    </div>
+
+    <!-- Payment History (collapsible, lazy-loaded) -->
+    <div class="pay-history" id="hist-<%= tx.id %>">
+        <div class="pay-history-header" onclick="toggleHistory(<%= tx.id %>, <%= CUSTOMER_ID %>)">
+            <div class="pay-history-title">
+                <i class="fas fa-history" style="color:#2d9e5f;font-size:0.75rem;"></i>
+                Payment History
+            </div>
+            <i class="fas fa-chevron-down toggle-icon" id="icon-<%= tx.id %>" style="font-size:0.65rem;color:#aaa;transition:transform 0.2s;"></i>
+        </div>
+        <div class="pay-history-body" id="histbody-<%= tx.id %>">
+            <div class="timeline" id="timeline-<%= tx.id %>">
+                <div class="tl-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Payment form (only if not completed) -->
+    <% if (!isCompleted) { %>
+    <div class="add-pay-section" id="paySec-<%= tx.id %>">
+        <div class="add-pay-title">
+            <i class="fas fa-hand-holding-usd"></i>
+            Record Payment — ₹<%= txRemaining.toLocaleString('en-IN') %> remaining
+        </div>
+        <div class="pay-form">
+            <div class="pay-form-row">
+                <div class="form-group">
+                    <label>Amount Received (₹)</label>
+                    <input type="number" id="payAmt-<%= tx.id %>" min="1" max="<%= txRemaining %>"
+                           placeholder="e.g. 500" oninput="checkPayAmt(<%= tx.id %>, <%= txRemaining %>)">
+                    <div class="remaining-hint" id="payHint-<%= tx.id %>"></div>
+                </div>
+                <div class="form-group">
+                    <label>Payment Date</label>
+                    <input type="date" id="payDate-<%= tx.id %>" value="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea id="payNotes-<%= tx.id %>" placeholder="e.g. paid by cash, cheque..."></textarea>
+            </div>
+            <button class="btn-record" id="payBtn-<%= tx.id %>"
+                    onclick="recordPayment(<%= tx.id %>, <%= CUSTOMER_ID %>, <%= txRemaining %>)">
+                <i class="fas fa-check-circle"></i> Record Payment
+            </button>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Delete -->
+    <div class="tx-footer">
+        <button class="btn-del" onclick="deleteTx(<%= tx.id %>, <%= CUSTOMER_ID %>)">
+            <i class="fas fa-trash-alt"></i> Delete
+        </button>
+    </div>
+</div>
+<% }) %>
+
+<!-- Add Transaction Modal -->
+<div class="overlay" id="addTxOverlay" onclick="closeAddTx(event)">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title"><i class="fas fa-plus-circle" style="margin-right:0.4rem;"></i> Add New Sale</div>
+        <div class="modal-form">
+            <div class="form-group">
+                <label>Product / Service Name *</label>
+                <input type="text" id="new_product" placeholder="e.g. DAP Fertilizer 50kg">
+            </div>
+            <div class="form-group">
+                <label>Total Amount (₹) *</label>
+                <input type="number" id="new_total" placeholder="e.g. 2000" oninput="updateAddHint()">
+            </div>
+            <div class="form-group">
+                <label>Payment Type *</label>
+                <select id="new_type" onchange="updateAddHint()">
+                    <option value="full_payment">Full Payment — paid fully right now</option>
+                    <option value="credit">Credit / Udhaar — will pay later</option>
+                    <option value="installment">Installment — partial paid now, rest later</option>
+                </select>
+            </div>
+            <div id="addHintBox" class="hint-box hint-green" style="display:none;"></div>
+            <div id="paidNowGroup" class="form-group" style="display:none;">
+                <label>Amount Paid Now (₹)</label>
+                <input type="number" id="new_paid_now" placeholder="e.g. 1000">
+            </div>
+            <div class="form-group">
+                <label>Sale Date *</label>
+                <input type="date" id="new_date" value="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div id="nextDateGroup" class="form-group" style="display:none;">
+                <label>Expected Next Payment Date</label>
+                <input type="date" id="new_next_date">
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea id="new_notes" placeholder="Any extra info..."></textarea>
+            </div>
+            <button class="btn-submit" id="addTxBtn" onclick="submitNewTx()">
+                <i class="fas fa-save"></i> Save Transaction
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-msg" id="toast"></div>
+
+
+<script>
+const CUST_ID = <%= CUSTOMER_ID %>;
+const historyLoaded = {};
+
+function showToast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast-msg' + (isError ? ' error' : '') + ' show';
+    setTimeout(() => t.className = 'toast-msg' + (isError ? ' error' : ''), 2800);
+}
+
+/* ---- Payment History toggle ---- */
+function toggleHistory(txId, custId) {
+    const body = document.getElementById('histbody-' + txId);
+    const icon = document.getElementById('icon-' + txId);
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+        body.classList.remove('open');
+        icon.style.transform = '';
+        return;
+    }
+    body.classList.add('open');
+    icon.style.transform = 'rotate(180deg)';
+    if (!historyLoaded[txId]) {
+        loadHistory(txId, custId);
+    }
+}
+
+async function loadHistory(txId, custId) {
+    const timeline = document.getElementById('timeline-' + txId);
+    try {
+        const res = await fetch(`/customers/${custId}/transaction/${txId}/payments`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        historyLoaded[txId] = true;
+        if (!data.success || data.payments.length === 0) {
+            timeline.innerHTML = '<div class="tl-empty">No payments recorded yet.</div>';
+            return;
+        }
+        timeline.innerHTML = data.payments.map(p => {
+            const d = new Date(p.payment_date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+            const amt = parseFloat(p.amount).toLocaleString('en-IN');
+            const note = p.notes ? `<div class="tl-notes">${p.notes}</div>` : '';
+            return `<div class="tl-item">
+                <div class="tl-dot"></div>
+                <div class="tl-date">${d}</div>
+                <div class="tl-amount">₹${amt}</div>
+                ${note}
+            </div>`;
+        }).join('');
+    } catch(e) {
+        timeline.innerHTML = '<div class="tl-empty">Could not load history.</div>';
+    }
+}
+
+/* ---- Record Payment ---- */
+function checkPayAmt(txId, remaining) {
+    const input = document.getElementById('payAmt-' + txId);
+    const hint = document.getElementById('payHint-' + txId);
+    const val = parseFloat(input.value) || 0;
+    if (val > remaining) {
+        hint.textContent = 'Cannot exceed ₹' + remaining.toLocaleString('en-IN') + ' (remaining)';
+        input.value = remaining;
+    } else if (val > 0) {
+        const afterPay = remaining - val;
+        hint.textContent = afterPay === 0 ? '✓ Fully paid!' : `₹${afterPay.toLocaleString('en-IN')} will remain`;
+    } else {
+        hint.textContent = '';
+    }
+}
+
+async function recordPayment(txId, custId, remaining) {
+    const amtEl = document.getElementById('payAmt-' + txId);
+    const dateEl = document.getElementById('payDate-' + txId);
+    const notesEl = document.getElementById('payNotes-' + txId);
+    const btn = document.getElementById('payBtn-' + txId);
+
+    const amount = parseFloat(amtEl.value);
+    const date = dateEl.value;
+    if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
+    if (!date) { showToast('Select a payment date', true); return; }
+    if (amount > remaining) { showToast('Amount exceeds remaining balance', true); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    try {
+        const res = await fetch('/customers/add-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ transaction_id: txId, customer_id: custId, payment_amount: amount, payment_date: date, notes: notesEl.value || '' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Payment recorded!');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            showToast(data.message || 'Failed', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Record Payment';
+        }
+    } catch(e) {
+        showToast('Network error', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Record Payment';
+    }
+}
+
+/* ---- Delete Transaction ---- */
+async function deleteTx(txId, custId) {
+    if (!confirm('Delete this transaction?')) return;
+    try {
+        const res = await fetch(`/customers/${custId}/transaction/${txId}`, {
+            method: 'DELETE',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('txcard-' + txId).remove();
+            showToast('Deleted');
+        } else {
+            showToast(data.message || 'Failed', true);
+        }
+    } catch(e) {
+        showToast('Error', true);
+    }
+}
+
+/* ---- Add Transaction Modal ---- */
+function openAddTx() {
+    document.getElementById('addTxOverlay').classList.add('open');
+    updateAddHint();
+}
+function closeAddTx(e) {
+    if (e.target === document.getElementById('addTxOverlay')) {
+        document.getElementById('addTxOverlay').classList.remove('open');
+    }
+}
+function updateAddHint() {
+    const type = document.getElementById('new_type').value;
+    const total = parseFloat(document.getElementById('new_total').value) || 0;
+    const hintBox = document.getElementById('addHintBox');
+    const paidGroup = document.getElementById('paidNowGroup');
+    const nextGroup = document.getElementById('nextDateGroup');
+
+    if (!document.getElementById('new_total').value) { hintBox.style.display = 'none'; return; }
+    hintBox.style.display = 'block';
+
+    if (type === 'full_payment') {
+        hintBox.className = 'hint-box hint-green';
+        hintBox.innerHTML = `<b>Full Payment</b> — Customer pays ₹${total.toLocaleString('en-IN')} right now. Nothing pending.`;
+        paidGroup.style.display = 'none';
+        nextGroup.style.display = 'none';
+    } else if (type === 'credit') {
+        hintBox.className = 'hint-box hint-red';
+        hintBox.innerHTML = `<b>Credit / Udhaar</b> — ₹${total.toLocaleString('en-IN')} is given on credit. Full amount pending.`;
+        paidGroup.style.display = 'none';
+        nextGroup.style.display = 'block';
+    } else {
+        hintBox.className = 'hint-box hint-orange';
+        hintBox.innerHTML = `<b>Installment</b> — Customer pays partial now, rest later. Enter how much paid now.`;
+        paidGroup.style.display = 'block';
+        nextGroup.style.display = 'block';
+    }
+}
+async function submitNewTx() {
+    const product = document.getElementById('new_product').value.trim();
+    const total = parseFloat(document.getElementById('new_total').value);
+    const type = document.getElementById('new_type').value;
+    const date = document.getElementById('new_date').value;
+    const notes = document.getElementById('new_notes').value.trim();
+    const nextDate = document.getElementById('new_next_date').value || null;
+
+    if (!product) { showToast('Enter product name', true); return; }
+    if (!total || total <= 0) { showToast('Enter valid amount', true); return; }
+    if (!date) { showToast('Select sale date', true); return; }
+
+    let paidNow = 0;
+    if (type === 'full_payment') { paidNow = total; }
+    else if (type === 'installment') {
+        paidNow = parseFloat(document.getElementById('new_paid_now').value) || 0;
+        if (paidNow < 0 || paidNow > total) { showToast('Invalid amount paid now', true); return; }
+    }
+
+    const btn = document.getElementById('addTxBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const txType = type === 'credit' ? 'credit' : type;
+
+    try {
+        const res = await fetch(`/customers/${CUST_ID}/transaction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({
+                product_service: product, total_amount: total,
+                transaction_type: txType, paid_amount: paidNow,
+                payment_date: date, next_payment_date: nextDate, notes
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Sale added!');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            showToast(data.message || 'Failed', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Save Transaction';
+        }
+    } catch(e) {
+        showToast('Network error', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Transaction';
+    }
+}
+
+// Auto-open ALL payment histories when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const allCards = document.querySelectorAll('.tx-card[id^="txcard-"]');
+    allCards.forEach(card => {
+        const txId = card.id.replace('txcard-', '');
+        toggleHistory(txId, CUST_ID);
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>Add Customer - AgriCrm.in | Credit Score Management</title>
+    <meta name="description" content="Add new customers to AgriCrm.in - Manage customer credit scores and payment records.">
+    <meta name="keywords" content="agricrm add customer, credit score management, customer registration">
+    <meta name="author" content="AgriCrm.in">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png"> 
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png"> 
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png"> 
+    <link rel="manifest" href="/img/site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root {
+    --primary-color: #1a6b3c;
+    --secondary-color: #2d9e5f;
+    --success-color: #16a34a;
+    --warning-color: #d97706;
+    --danger-color: #dc2626;
+    --text-color: #111827;
+    --text-secondary: #6b7280;
+    --background-color: #ffffff;
+    --light-gray: #f7f8fa;
+    --border-color: #e5e7eb;
+    --border-radius: 8px;
+    --shadow: 0 2px 10px rgba(0,0,0,0.07);
+    --form-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background: #f7f8fa;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px; /* Increased width for horizontal layout */
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* Main Content */
+.main-content {
+    padding: 2rem 0;
+}
+
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Horizontal Form Grid */
+.horizontal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    gap: 2rem;
+    align-items: start;
+}
+
+.form-container {
+    background: transparent; /* Changed from white to allow sections to be distinct */
+}
+
+.form-section {
+    background: var(--background-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--form-shadow);
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Full width elements like the button section */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Form Styles */
+.form-group { margin-bottom: 1.25rem; }
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+label i { color: var(--primary-color); }
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(26, 107, 60, 0.1);
+}
+
+.required-field::after {
+    content: ' *';
+    color: var(--danger-color);
+}
+
+/* Payment Summary Box */
+.payment-summary {
+    background: linear-gradient(135deg, #1a6b3c 0%, #2d9e5f 100%);
+    color: white;
+    padding: 1.25rem;
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+}
+
+.amount-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.amount-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.5rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.amount-label { font-size: 0.75rem; opacity: 0.9; }
+.amount-value { font-size: 1rem; font-weight: bold; }
+
+/* Submit Button */
+.submit-section {
+    text-align: center;
+    padding: 2rem;
+    background: var(--background-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--form-shadow);
+}
+
+.btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: 0.3s;
+}
+
+.btn:hover { background: var(--secondary-color); transform: translateY(-2px); }
+
+/* Responsive Logic */
+@media (max-width: 1024px) {
+    .horizontal-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .form-row { grid-template-columns: 1fr; }
+    .container { padding: 0 1rem; }
+}
+</style>
+</head>
+<body class="sidebar-layout">
+
+    <!-- Sidebar (Kept as per your code) -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'">
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section-label">Main Menu</div>
+            <a href="/dashboard" class="sidebar-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="/customers" class="sidebar-item"><i class="fas fa-users"></i><span>Customers</span></a>
+            <a href="/customers/adcm" class="sidebar-item add-item active"><i class="fas fa-user-plus"></i><span>Add Customer</span></a>
+            <div class="sidebar-divider"></div>
+            <a href="/report" class="sidebar-item"><i class="fas fa-chart-bar"></i><span>Reports</span></a>
+            <a href="/settings" class="sidebar-item"><i class="fas fa-cog"></i><span>Settings</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i><span>Log Out</span></a>
+        </div>
+    </aside>
+
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-user-plus"></i> Add New Customer</div>
+        <div class="page-topbar-right">
+            <a href="/customers" style="background:#f3f4f6;border:none;color:#374151;width:34px;height:34px;border-radius:7px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title"><i class="fas fa-user-plus"></i> Add New Customer</h1>
+                <p class="page-subtitle">Fill the details below to register a new customer</p>
+            </div>
+
+            <form id="customerForm" class="horizontal-grid">
+                
+                <!-- LEFT COLUMN: Identity & Address -->
+                <div class="left-column">
+                    <div class="form-section">
+                        <h3 class="section-title"><i class="fas fa-user"></i> Customer Information</h3>
+                        <p class="section-subtitle">Basic identity details</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="custName" class="required-field"><i class="fas fa-user"></i> Name</label>
+                                <input type="text" id="custName" placeholder="Full name" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="mobile" class="required-field"><i class="fas fa-mobile-alt"></i> Mobile</label>
+                                <input type="tel" id="mobile" maxlength="10" placeholder="10-digit number" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Address Details</h3>
+                        <p class="section-subtitle">Auto-fills when pincode is entered</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="pincode" class="required-field"><i class="fas fa-map-pin"></i> Pincode</label>
+                                <input type="text" id="pincode" maxlength="6" onblur="fetchPincodeData(this.value)" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="village" class="required-field"><i class="fas fa-home"></i> Village/City</label>
+                                <input type="text" id="village" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="district" class="required-field"><i class="fas fa-map"></i> District</label>
+                                <input type="text" id="district" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="state" class="required-field"><i class="fas fa-map-pin"></i> State</label>
+                                <input type="text" id="state" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="address" class="required-field">Complete Address</label>
+                            <textarea id="address" rows="2" placeholder="House/Street details" required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Payment & Notes -->
+                <div class="right-column">
+                    <div class="form-section">
+                        <h3 class="section-title"><i class="fas fa-credit-card"></i> Payment Info</h3>
+                        <p class="section-subtitle">Transaction and balance details</p>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentType" class="required-field">Payment Mode</label>
+                                <select id="paymentType" onchange="toggleInstallmentFields()" required>
+                                    <option value="">Select type</option>
+                                    <option value="one-time">One-Time (Full)</option>
+                                    <option value="installment">Installment (Partial)</option>
+                                    <option value="credit">Credit (Udhaar)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="payDate" class="required-field">Date</label>
+                                <input type="date" id="payDate" required />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product" class="required-field">Product</label>
+                                <select id="product" required>
+                                    <option value="">Select product</option>
+                                    <option value="fertilizer">Organic Fertilizer</option>
+                                    <option value="seeds">Hybrid Seeds</option>
+                                    <option value="equipment">Farming Equipment</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="totalAmount" class="required-field">Total (₹)</label>
+                                <input type="number" id="totalAmount" oninput="calculateRemaining()" onchange="updatePaidAmount()" required />
+                            </div>
+                        </div>
+
+                        <div id="typeHint" style="display:none; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.8rem;"></div>
+
+                        <div id="installmentFields" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group" id="paidNowGroup">
+                                    <label for="paidNow">Paid Now (₹)</label>
+                                    <input type="number" id="paidNow" oninput="calculateRemaining()" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="nextDate">Next Due Date</label>
+                                    <input type="date" id="nextDate" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-summary" id="paymentSummary">
+                            <div class="amount-breakdown">
+                                <div class="amount-item">
+                                    <div class="amount-label">Total</div>
+                                    <div class="amount-value" id="summaryTotal">₹0</div>
+                                </div>
+                                <div class="amount-item">
+                                    <div class="amount-label">Paid</div>
+                                    <div class="amount-value" id="summaryPaid">₹0</div>
+                                </div>
+                                <div class="amount-item">
+                                    <div class="amount-label">Due</div>
+                                    <div class="amount-value" id="summaryRemaining">₹0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title"><i class="fas fa-info-circle"></i> Additional Notes</h3>
+                        <div class="form-group">
+                            <textarea id="notes" rows="2" placeholder="Any specific remarks..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FULL WIDTH: Action Button -->
+                <div class="full-width">
+                    <div class="submit-section">
+                        <button type="button" class="btn" onclick="submitForm()">
+                            <i class="fas fa-save"></i> Save Customer & Transaction
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+<script>
+  // Set default date to today
+  document.getElementById('payDate').valueAsDate = new Date();
+  
+  // Cache for pincode API responses
+  const pincodeCache = new Map();
+  const PINCODE_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+  const PINCODE_RATE_LIMIT = 1000; // Minimum time between requests
+  let lastPincodeRequest = 0;
+
+  async function fetchPincodeData(pincode) {
+    try {
+      // Validate pincode
+      if (!pincode || pincode.length !== 6) return;
+      
+      // Rate limiting
+      const now = Date.now();
+      if (now - lastPincodeRequest < PINCODE_RATE_LIMIT) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Please wait',
+          text: 'Too many requests. Please wait a moment.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        return;
+      }
+      lastPincodeRequest = now;
+
+      // Check cache first
+      const cacheKey = `pincode_${pincode}`;
+      const cachedData = pincodeCache.get(cacheKey);
+      if (cachedData && (now - cachedData.timestamp) < PINCODE_CACHE_DURATION) {
+        fillAddressFields(cachedData.data);
+        return;
+      }
+
+      Swal.fire({
+        title: 'Loading...',
+        text: 'Fetching address details',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      
+      // Fetch from API
+      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await response.json();
+      
+      if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+        // Cache the response
+        pincodeCache.set(cacheKey, {
+          data: data,
+          timestamp: now
+        });
+        
+        fillAddressFields(data);
+      } else {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Pincode Not Found',
+          text: 'Please enter a valid 6-digit pincode',
+          confirmButtonText: 'OK'
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Could not fetch address details. Please fill manually.',
+        confirmButtonText: 'OK'
+      });
+    }
+  }
+
+  function fillAddressFields(data) {
+    const postOffice = data[0].PostOffice[0];
+    
+    document.getElementById('village').value = postOffice.Name || '';
+    document.getElementById('district').value = postOffice.District || '';
+    document.getElementById('state').value = postOffice.State || '';
+    
+    const pincode = document.getElementById('pincode').value;
+    const completeAddress = `${postOffice.Name}, ${postOffice.District}, ${postOffice.State} - ${pincode}`;
+    document.getElementById('address').value = completeAddress;
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'Address Found!',
+      text: 'Address details have been auto-filled',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+  
+  function toggleInstallmentFields() {
+    const type = document.getElementById('paymentType').value;
+    const installmentFields = document.getElementById('installmentFields');
+    const paidNowGroup = document.getElementById('paidNowGroup');
+    const typeHint = document.getElementById('typeHint');
+    const totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
+    
+    typeHint.style.display = 'none';
+
+    if (type === 'one-time') {
+      installmentFields.style.display = 'none';
+      document.getElementById('paidNow').value = totalAmount > 0 ? totalAmount.toString() : '';
+      typeHint.style.display = 'block';
+      typeHint.style.background = '#e8f5e9';
+      typeHint.style.color = '#1a6b3c';
+      typeHint.style.border = '1px solid #a5d6a7';
+      typeHint.innerHTML = '<i class="fas fa-check-circle"></i> One-Time: Customer pays the full amount right now. No pending balance.';
+
+    } else if (type === 'installment') {
+      installmentFields.style.display = 'block';
+      paidNowGroup.style.display = 'block';
+      document.getElementById('paidNow').value = '';
+      document.getElementById('nextDate').valueAsDate = new Date(new Date().setDate(new Date().getDate() + 30));
+      typeHint.style.display = 'block';
+      typeHint.style.background = '#fff3e0';
+      typeHint.style.color = '#e65100';
+      typeHint.style.border = '1px solid #ffcc80';
+      typeHint.innerHTML = '<i class="fas fa-info-circle"></i> Installment: Customer pays part now and rest later. Enter amount paid now.';
+
+    } else if (type === 'credit') {
+      installmentFields.style.display = 'block';
+      paidNowGroup.style.display = 'none';
+      document.getElementById('paidNow').value = '0';
+      document.getElementById('nextDate').valueAsDate = new Date(new Date().setDate(new Date().getDate() + 30));
+      typeHint.style.display = 'block';
+      typeHint.style.background = '#fce4ec';
+      typeHint.style.color = '#880e4f';
+      typeHint.style.border = '1px solid #f48fb1';
+      typeHint.innerHTML = '<i class="fas fa-exclamation-circle"></i> Credit / Udhaar: Customer takes goods now and pays full amount later.';
+    }
+
+    calculateRemaining();
+  }
+
+  function updatePaidAmount() {
+    const type = document.getElementById('paymentType').value;
+    const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+    
+    if (type === 'one-time' && total > 0) {
+      document.getElementById('paidNow').value = total.toString();
+    }
+    calculateRemaining();
+  }
+
+  function calculateRemaining() {
+    const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+    const paid = parseFloat(document.getElementById('paidNow').value) || 0;
+    const remaining = Math.max(0, total - paid);
+    
+    document.getElementById('summaryTotal').textContent = `₹${total.toFixed(2)}`;
+    document.getElementById('summaryPaid').textContent = `₹${paid.toFixed(2)}`;
+    document.getElementById('summaryRemaining').textContent = `₹${remaining.toFixed(2)}`;
+    
+    const remainingElement = document.getElementById('summaryRemaining');
+    if (remaining > 0) {
+      remainingElement.style.color = '#ffc107';
+    } else {
+      remainingElement.style.color = '#28a745';
+    }
+    
+    if (paid > total && total > 0) {
+      document.getElementById('paidNow').value = total.toString();
+      calculateRemaining();
+    }
+  }
+
+  async function submitForm() {
+    const name = document.getElementById('custName').value.trim();
+    const mobile = document.getElementById('mobile').value.trim();
+    const pincode = document.getElementById('pincode').value.trim();
+    const village = document.getElementById('village').value.trim();
+    const district = document.getElementById('district').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const type = document.getElementById('paymentType').value;
+    const product = document.getElementById('product').value;
+    const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+    
+    let paid;
+    if (type === 'one-time') {
+      paid = total;
+    } else if (type === 'installment') {
+      paid = parseFloat(document.getElementById('paidNow').value) || 0;
+    } else {
+      paid = 0;
+    }
+    
+    const remain = Math.max(0, total - paid);
+    const next = (type === 'installment' || type === 'credit') ? document.getElementById('nextDate').value : null;
+    const date = document.getElementById('payDate').value;
+    const notes = document.getElementById('notes').value.trim();
+
+    // Validation
+    if (!name || !mobile || !pincode || !village || !district || !state || !address || !total) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Information',
+        text: 'Please fill all required fields',
+      });
+      return;
+    }
+
+    if (mobile.length !== 10) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Mobile',
+        text: 'Mobile number must be 10 digits',
+      });
+      return;
+    }
+
+    if (pincode.length !== 6) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Pincode',
+        text: 'Pincode must be 6 digits',
+      });
+      return;
+    }
+
+    if (!product || !type || !date) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Payment Details',
+        text: 'Please fill all payment information',
+      });
+      return;
+    }
+
+    // Show loading
+    Swal.fire({
+      title: 'Saving...',
+      text: 'Please wait while we save the customer data',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const response = await fetch('/customers/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          mobile_number: mobile,
+          pincode: pincode,
+          village_city: village,
+          district: district,
+          state: state,
+          complete_address: address,
+          transaction_type: type,
+          product_service: product,
+          total_amount: total,
+          paid_amount: paid,
+          payment_date: date,
+          next_payment_date: next,
+          notes: notes
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Customer added successfully!',
+          confirmButtonText: 'View Customers',
+          showCancelButton: true,
+          cancelButtonText: 'Add Another'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = '/customers';
+          } else {
+            document.getElementById('customerForm').reset();
+            document.getElementById('payDate').valueAsDate = new Date();
+            calculateRemaining();
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.error || 'Failed to add customer',
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to save customer. Please try again.',
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

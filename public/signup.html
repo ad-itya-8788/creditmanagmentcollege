@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - AgriCrm.in</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f7f8fa; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* Header */
+        .top-bar {
+            background: #fff; border-bottom: 1px solid #e5e7eb;
+            height: 52px; padding: 0 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10;
+        }
+        .top-bar img { height: 32px; object-fit: contain; }
+        .top-bar a.btn-link {
+            font-size: 0.82rem; font-weight: 600; color: #1a6b3c;
+            text-decoration: none; padding: 0.35rem 0.9rem;
+            border: 1.5px solid #1a6b3c; border-radius: 8px; transition: all 0.15s;
+        }
+        .top-bar a.btn-link:hover { background: #1a6b3c; color: white; }
+
+        /* Page */
+        .page { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+
+        /* Card */
+        .card {
+            background: #fff; border-radius: 16px;
+            padding: 2rem 2rem; width: 100%; max-width: 520px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+        }
+        .card-logo { text-align: center; margin-bottom: 1.5rem; }
+        .card-logo img { height: 40px; object-fit: contain; }
+        .card-logo h2 { font-size: 1.1rem; font-weight: 700; color: #111; margin-top: 0.5rem; }
+        .card-logo p { font-size: 0.76rem; color: #9ca3af; margin-top: 0.15rem; }
+
+        .section-label {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #1a6b3c; margin: 1.1rem 0 0.65rem;
+            padding-bottom: 0.3rem; border-bottom: 1px solid #e8f5ee;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; gap: 0; } }
+
+        .form-group { margin-bottom: 0.75rem; }
+        .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 0.28rem; }
+        .form-group label .req { color: #e74c3c; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.6rem 0.85rem;
+            border: 1.5px solid #e5e7eb; border-radius: 9px;
+            font-size: 0.85rem; font-family: 'Poppins', sans-serif;
+            color: #111; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #1a6b3c; background: #fff;
+            box-shadow: 0 0 0 3px rgba(26,107,60,0.1);
+        }
+        .form-group textarea { resize: vertical; min-height: 64px; }
+
+        .terms-row {
+            display: flex; align-items: flex-start; gap: 0.5rem;
+            margin: 0.85rem 0; font-size: 0.76rem; color: #555; line-height: 1.5;
+        }
+        .terms-row input[type="checkbox"] { width: auto; margin-top: 3px; accent-color: #1a6b3c; flex-shrink: 0; }
+        .terms-row a { color: #1a6b3c; text-decoration: none; font-weight: 600; }
+
+        .btn-main {
+            width: 100%; padding: 0.75rem; background: #1a6b3c;
+            color: white; border: none; border-radius: 9px;
+            font-size: 0.92rem; font-weight: 600; cursor: pointer;
+            font-family: 'Poppins', sans-serif; transition: background 0.2s, transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        .btn-main:hover { background: #155e34; transform: translateY(-1px); }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .alt-link { text-align: center; margin-top: 1rem; font-size: 0.82rem; color: #6b7280; }
+        .alt-link a { color: #1a6b3c; font-weight: 600; text-decoration: none; }
+
+        footer { text-align: center; padding: 1rem; font-size: 0.72rem; color: #9ca3af; border-top: 1px solid #f3f4f6; }
+    </style>
+</head>
+<body>
+
+<header class="top-bar">
+    <a href="/"><img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'"></a>
+    <a href="/login" class="btn-link">Sign In</a>
+</header>
+
+<div class="page">
+    <div class="card">
+        <div class="card-logo">
+            <img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'">
+            <h2>Create Your Account</h2>
+            <p>Register your fertilizer shop</p>
+        </div>
+
+        <form id="signupForm">
+            <div class="section-label"><i class="fas fa-store"></i> Shop Details</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Shop Name <span class="req">*</span></label>
+                    <input type="text" name="shop_name" placeholder="Your shop name" required maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Owner Name <span class="req">*</span></label>
+                    <input type="text" name="owner_name" placeholder="Owner's name" required maxlength="100">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Phone Number <span class="req">*</span></label>
+                    <input type="tel" name="owner_phone" id="owner_phone" placeholder="10-digit mobile" required maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label>Email Address <span class="req">*</span></label>
+                    <input type="email" name="email" placeholder="your@email.com" required maxlength="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Shop Address <span class="req">*</span></label>
+                <textarea name="shop_address" placeholder="Complete shop address" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" name="pincode" id="pincode" placeholder="6-digit pincode" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label>District</label>
+                    <input type="text" name="district" id="district" placeholder="District name" maxlength="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tehsil / Block</label>
+                <input type="text" name="tehsil" id="tehsil" placeholder="Tehsil or block name" maxlength="100">
+            </div>
+
+
+            <div class="section-label"><i class="fas fa-lock"></i> Set Password</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Password <span class="req">*</span></label>
+                    <input type="password" name="password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password <span class="req">*</span></label>
+                    <input type="password" name="confirm_password" placeholder="Re-enter password" required minlength="8" autocomplete="new-password">
+                </div>
+            </div>
+
+            <div class="terms-row">
+                <input type="checkbox" id="terms" required>
+                <label for="terms">I agree to the <a href="/terms" target="_blank">Terms</a> &amp; <a href="/privacy-policy" target="_blank">Privacy Policy</a></label>
+            </div>
+
+            <button type="submit" class="btn-main" id="signupBtn">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <div class="alt-link">Already have an account? <a href="/login">Sign in</a></div>
+    </div>
+</div>
+
+<footer>&copy; AgriCrm.in &nbsp;&bull;&nbsp; Agricultural Credit Management</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<script>
+    let pincodeTimeout;
+    document.getElementById('pincode').addEventListener('input', function(e) {
+        const pincode = e.target.value.trim();
+        clearTimeout(pincodeTimeout);
+        if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+            document.getElementById('tehsil').value = 'Loading...';
+            document.getElementById('district').value = 'Loading...';
+            pincodeTimeout = setTimeout(() => fetchPincodeData(pincode), 500);
+        }
+    });
+    async function fetchPincodeData(pincode) {
+        try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+            const data = await res.json();
+            if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice) {
+                const po = data[0].PostOffice[0];
+                document.getElementById('tehsil').value = po.Block || po.Division || '';
+                document.getElementById('district').value = po.District || '';
+            } else {
+                document.getElementById('tehsil').value = '';
+                document.getElementById('district').value = '';
+            }
+        } catch {
+            document.getElementById('tehsil').value = '';
+            document.getElementById('district').value = '';
+        }
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const payload = new URLSearchParams(new FormData(this));
+        const password = payload.get('password');
+        const confirmPassword = payload.get('confirm_password');
+        if (password !== confirmPassword) {
+            Swal.fire({ icon: 'error', title: 'Passwords Mismatch', text: 'Passwords do not match.', confirmButtonColor: '#1a6b3c' });
+            return;
+        }
+        if (password.length < 8) {
+            Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 8 characters.', confirmButtonColor: '#1a6b3c' });
+            return;
+        }
+        const phone = payload.get('owner_phone');
+        if (!/^[0-9]{10}$/.test(phone)) {
+            Swal.fire({ icon: 'error', title: 'Invalid Phone', text: 'Enter a valid 10-digit phone number.', confirmButtonColor: '#1a6b3c' });
+            return;
+        }
+        const email = payload.get('email');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            Swal.fire({ icon: 'error', title: 'Invalid Email', text: 'Enter a valid email address.', confirmButtonColor: '#1a6b3c' });
+            return;
+        }
+        const btn = document.getElementById('signupBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        try {
+            const response = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: payload.toString()
+            });
+            let data;
+            try { data = await response.json(); } catch { data = {}; }
+            if (response.ok) {
+                await Swal.fire({ icon: 'success', title: 'Account Created!', text: data.message || 'Login to get started.', confirmButtonText: 'Login Now', confirmButtonColor: '#1a6b3c' });
+                window.location.href = '/login';
+            } else {
+                Swal.fire({ icon: 'error', title: 'Registration Failed', text: data.error || data.message || 'Please try again.', confirmButtonColor: '#1a6b3c' });
+            }
+        } catch {
+            Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Cannot connect. Please try again.', confirmButtonColor: '#1a6b3c' });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+        }
+    });
+    (async () => {
+        try {
+            const r = await fetch('/auth/check-auth');
+            const d = await r.json();
+            if (d.authenticated) window.location.href = '/dashboard';
+        } catch {}
+    })();
+</script>
+</body>
+</html>

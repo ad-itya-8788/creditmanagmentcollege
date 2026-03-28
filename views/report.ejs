@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png"> 
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png"> 
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png"> 
+    <link rel="manifest" href="/img/site.webmanifest">
+    
+    <!-- jsPDF library for frontend PDF generation -->
+    <!-- PDF generation now handled by backend -->
+    
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
+    <style>
+        :root {
+            --primary-color: #1a6b3c;
+            --secondary-color: #2d9e5f;
+            --success-color: #16a34a;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --info-color: #0ea5e9;
+            --text-color: #111827;
+            --text-secondary: #6b7280;
+            --text-muted: #6b7280;
+            --background-color: #ffffff;
+            --light-gray: #f7f8fa;
+            --white: #ffffff;
+            --border-color: #e5e7eb;
+            --border-radius: 8px;
+            --shadow: 0 2px 10px rgba(0,0,0,0.07);
+            --shadow-hover: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+        }
+
+        .container {
+            width: 100%;
+            padding: 0;
+        }
+
+        /* Header */
+        .header {
+            background: var(--background-color);
+            padding: 0.5rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            height: 40px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1rem 1.5rem 90px;
+        }
+
+        .page-header {
+            margin-bottom: 0.75rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .page-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.1rem;
+        }
+
+        .page-subtitle {
+            color: #374151;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .shop-info {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.25rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+
+        .shop-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .shop-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Statistics Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 640px) {
+            .stats-container { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .stat-card:active {
+            transform: translateY(-1px);
+        }
+
+        .stat-card.clear {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .stat-card.pending {
+            border-top: 4px solid var(--warning-color);
+        }
+
+        .stat-card.total {
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            margin: 0 auto 0.5rem;
+        }
+
+        .stat-card.total .stat-icon {
+            background: #1a6b3c;
+        }
+
+        .stat-card.clear .stat-icon {
+            background: #16a34a;
+        }
+
+        .stat-card.pending .stat-icon {
+            background: #FFC107;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label {
+            color: #374151;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .filter-header {
+            padding: 0.6rem 1rem;
+            background: #fff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .filter-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #f9fafb;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #1a6b3c;
+            color: white;
+            border-color: #1a6b3c;
+        }
+
+        .filter-btn:hover:not(.active) {
+            border-color: #1a6b3c;
+            color: #1a6b3c;
+        }
+
+        .download-btn {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Filter Toolbar */
+        .filter-toolbar {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; margin-bottom: 0.6rem;
+        }
+        .rpt-search {
+            display: flex; align-items: center; background: #f9fafb;
+            border: 1px solid #e5e7eb; border-radius: 6px;
+            padding: 0.28rem 0.65rem; gap: 0.35rem; flex: 1; min-width: 160px;
+        }
+        .rpt-search i { color: #9ca3af; font-size: 0.72rem; }
+        .rpt-search input {
+            border: none; outline: none; font-size: 0.75rem; width: 100%;
+            font-family: 'Poppins', sans-serif; background: transparent; color: #111827;
+        }
+        .filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+        .fp-btn {
+            background: #f9fafb; color: #374151;
+            border: 1px solid #d1d5db; padding: 0.3rem 0.75rem;
+            border-radius: 6px; cursor: pointer;
+            font-size: 0.72rem; font-weight: 600;
+            font-family: 'Poppins', sans-serif; transition: all 0.15s;
+        }
+        .fp-btn.active { background: #1a6b3c; color: white; border-color: #1a6b3c; }
+        .fp-btn:hover:not(.active) { border-color: #1a6b3c; color: #1a6b3c; }
+        .fp-pdf {
+            background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+            padding: 0.3rem 0.75rem; border-radius: 6px; cursor: pointer;
+            font-size: 0.72rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+            display: flex; align-items: center; gap: 5px; transition: all 0.15s;
+        }
+        .fp-pdf:hover { background: #dc2626; color: white; }
+
+        /* Customer Table */
+        .customer-table-container {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            margin-bottom: 1rem;
+        }
+
+        .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            background: #fff;
+            table-layout: fixed;
+        }
+
+        .customer-table thead tr { background: #f0fdf4; }
+
+        .customer-table th {
+            color: #1f2937;
+            padding: 0.6rem 0.85rem;
+            text-align: left;
+            font-size: 0.66rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-right: 1px solid #d1d5db;
+            border-bottom: 2px solid #86efac;
+            white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .customer-table th:last-child { border-right: none; }
+
+        .customer-table td {
+            padding: 0.55rem 0.85rem;
+            border-bottom: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            vertical-align: middle;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .customer-table td:last-child { border-right: none; }
+
+        .customer-table tbody tr:last-child td { border-bottom: none; }
+
+        .customer-table tbody tr:nth-child(even) { background-color: #fafafa; }
+
+        .customer-table tbody tr:hover { background-color: #f0fdf4; }
+
+        .customer-name {
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .customer-mobile {
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .customer-aadhar {
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+
+        .customer-village {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .amount-cell {
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .amount-total {
+            color: var(--primary-color);
+        }
+
+        .amount-pending {
+            color: var(--danger-color);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-clear {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+
+        /* Due Date Styles */
+        .payment-date-cell {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .payment-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 80px;
+            color: var(--success-color);
+            background-color: #e8f5e8;
+            border: 1px solid var(--success-color);
+        }
+
+        .due-date-cell {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .due-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        .due-date.overdue {
+            color: var(--danger-color);
+            background-color: #ffe6e6;
+            border: 1px solid var(--danger-color);
+        }
+
+        .due-date.today {
+            color: var(--warning-color);
+            background-color: #fff3cd;
+            border: 1px solid var(--warning-color);
+        }
+
+        .due-date.clear {
+            color: var(--text-muted);
+        }
+
+        .due-date.no-date {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .overdue-badge {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--danger-color);
+            font-weight: bold;
+            margin-top: 0.1rem;
+        }
+
+        .today-badge {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--warning-color);
+            font-weight: bold;
+            margin-top: 0.1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .empty-description {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+                padding-bottom: 100px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .stat-card {
+                padding: 0.8rem;
+            }
+
+            .customer-table {
+                font-size: 0.8rem;
+                min-width: 700px;
+            }
+
+            .customer-table th,
+            .customer-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .filter-header {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-controls {
+                justify-content: center;
+            }
+
+            .filter-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .stat-card {
+                padding: 0.6rem;
+            }
+
+            .customer-table {
+                font-size: 0.75rem;
+                min-width: 600px;
+            }
+
+            .customer-table th,
+            .customer-table td {
+                padding: 0.5rem 0.25rem;
+            }
+
+            .amount-cell {
+                text-align: right;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .filter-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .nav-item {
+                min-width: 55px;
+                padding: 3px 6px;
+            }
+
+            .nav-icon {
+                font-size: 22px;
+            }
+
+            .nav-label {
+                font-size: 10px;
+            }
+
+            .add-customer-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .stat-card {
+                padding: 0.6rem;
+            }
+
+            .customer-table {
+                font-size: 0.75rem;
+                min-width: 600px;
+            }
+
+            .customer-table th,
+            .customer-table td {
+                padding: 0.5rem 0.25rem;
+            }
+
+            .amount-cell {
+                text-align: right;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .filter-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .main-content {
+                padding-bottom: 130px;
+            }
+
+            .nav-container {
+                padding: 0 0.3rem;
+            }
+
+            .nav-item {
+                padding: 0.3rem 0;
+                min-width: 60px;
+            }
+
+            .nav-icon {
+                font-size: 24px;
+                margin-bottom: 0.2rem;
+            }
+
+            .nav-label {
+                font-size: 11px;
+            }
+
+            .add-customer-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
+                margin-top: -20px;
+            }
+        }
+
+        /* Enhanced mobile responsiveness for very small screens */
+        @media (max-width: 360px) {
+            .main-content {
+                padding-bottom: 140px;
+            }
+
+            .nav-item {
+                min-width: 55px;
+            }
+
+            .nav-icon {
+                font-size: 20px;
+            }
+
+            .nav-label {
+                font-size: 9px;
+            }
+
+            .add-customer-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            /* Footer */
+            .footer {
+                background: var(--white);
+                border-top: 1px solid var(--border-color);
+                padding: 1rem 0;
+                text-align: center;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+
+            .footer a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+        }
+    </style>
+</head>
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'report'}) %>
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-chart-bar"></i> Customer Reports</div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-chart-bar" style="color:#1a6b3c;margin-right:6px;"></i>Customer Reports</h1>
+                </div>
+            </div>
+
+            <!-- Shop Information -->
+            <div class="shop-info">
+                <div class="shop-name"><%= user.shop_name || 'AgriCRM Shop' %></div>
+                <div class="shop-details">
+                    <% if (user.owner_name) { %>
+                        Owner: <%= user.owner_name %> | 
+                    <% } %>
+                    <% if (user.owner_phone) { %>
+                        Phone: <%= user.owner_phone %> | 
+                    <% } %>
+                    <% if (user.district) { %>
+                        <%= user.district %>, <%= user.tehsil || '' %>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Summary Table -->
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f0fdf4;">
+                            <th style="padding:0.5rem 1rem;text-align:left;font-size:0.65rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;border-right:1px solid #e5e7eb;border-bottom:2px solid #d1fae5;white-space:nowrap;"><i class="fas fa-users" style="color:#1a6b3c;margin-right:4px;"></i>Total Customers</th>
+                            <th style="padding:0.5rem 1rem;text-align:left;font-size:0.65rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;border-right:1px solid #e5e7eb;border-bottom:2px solid #d1fae5;white-space:nowrap;"><i class="fas fa-check-circle" style="color:#16a34a;margin-right:4px;"></i>Clear</th>
+                            <th style="padding:0.5rem 1rem;text-align:left;font-size:0.65rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #d1fae5;white-space:nowrap;"><i class="fas fa-clock" style="color:#dc2626;margin-right:4px;"></i>Pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding:0.65rem 1rem;font-size:1.35rem;font-weight:800;color:#1a6b3c;border-right:1px solid #f3f4f6;"><%= totalCustomers %></td>
+                            <td style="padding:0.65rem 1rem;font-size:1.35rem;font-weight:800;color:#16a34a;border-right:1px solid #f3f4f6;"><%= totalClear %></td>
+                            <td style="padding:0.65rem 1rem;font-size:1.35rem;font-weight:800;color:#dc2626;"><%= totalPending %></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Filter Toolbar -->
+            <div class="filter-toolbar">
+                <div class="rpt-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="rptSearch" placeholder="Search by name or phone..." oninput="searchReport()">
+                </div>
+                <div class="filter-pills">
+                    <button class="fp-btn active" data-filter="all"><i class="fas fa-list"></i> All</button>
+                    <button class="fp-btn" data-filter="clear"><i class="fas fa-check-circle"></i> Clear</button>
+                    <button class="fp-btn" data-filter="pending"><i class="fas fa-clock"></i> Pending</button>
+                </div>
+                <button class="fp-pdf" onclick="generatePDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+
+            <!-- Customer Table -->
+            <div class="customer-table-container">
+                <table class="customer-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                            <th>Village</th>
+                            <th>Total Amount</th>
+                            <th>Pending Amount</th>
+                            <th>First Payment</th>
+                            <th>Next Due</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <% 
+                        const allCustomers = [];
+                        if (clearCustomers && clearCustomers.length > 0) {
+                            clearCustomers.forEach(customer => {
+                                allCustomers.push({
+                                    ...customer,
+                                   status: 'clear',
+                                    pending_amount: 0
+                                });
+                            });
+                        }
+                        if (pendingCustomers && pendingCustomers.length > 0) {
+                            pendingCustomers.forEach(customer => {
+                                allCustomers.push({
+                                    ...customer,
+                                    status: 'pending'
+                                });
+                            });
+                        }
+                        %>
+                        
+                        <% if (allCustomers && allCustomers.length > 0) { %>
+                            <% allCustomers.forEach(function(customer) { %>
+                                <tr class="customer-row" data-status="<%= customer.status %>" data-name="<%= (customer.name || '').toLowerCase() %>" data-mobile="<%= customer.mobile_number || '' %>">
+                                    <td>
+                                        <div class="customer-name"><%= customer.name || 'N/A' %></div>
+                                    </td>
+                                    <td>
+                                        <div class="customer-mobile"><%= customer.mobile_number || 'N/A' %></div>
+                                    </td>
+                                    <td>
+                                        <div class="customer-village"><%= customer.village_city || 'N/A' %></div>
+                                    </td>
+                                    <td class="amount-cell amount-total">
+                                        ₹<%= (customer.total_amount || 0).toLocaleString() %>
+                                    </td>
+                                    <td class="amount-cell <%= customer.status === 'pending' ? 'amount-pending' : '' %>">
+                                        <% if (customer.status === 'pending') { %>
+                                            ₹<%= (customer.pending_amount || 0).toLocaleString() %>
+                                        <% } else { %>
+                                            ₹0
+                                        <% } %>
+                                    </td>
+                                    <td class="payment-date-cell">
+                                        <% if (customer.first_payment_date) { %>
+                                            <div class="payment-date">
+                                                <%= new Date(customer.first_payment_date).toLocaleDateString('en-IN') %>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="payment-date no-date">-</div>
+                                        <% } %>
+                                    </td>
+                                    <td class="due-date-cell">
+                                        <% if (customer.status === 'pending' && customer.next_due_date) { %>
+                                            <% 
+                                            const dueDate = new Date(customer.next_due_date);
+                                            const today = new Date();
+                                            const isOverdue = dueDate < today;
+                                            const isToday = dueDate.toDateString() === today.toDateString();
+                                            %>
+                                            <div class="due-date <%= isOverdue ? 'overdue' : (isToday ? 'today' : '') %>">
+                                                <%= dueDate.toLocaleDateString('en-IN') %>
+                                                <% if (isOverdue) { %>
+                                                    <span class="overdue-badge">Overdue</span>
+                                                <% } else if (isToday) { %>
+                                                    <span class="today-badge">Today</span>
+                                                <% } %>
+                                            </div>
+                                        <% } else if (customer.status === 'pending') { %>
+                                            <div class="due-date no-date">No Due Date</div>
+                                        <% } else { %>
+                                            <div class="due-date clear">-</div>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-<%= customer.status %>">
+                                            <%= customer.status === 'clear' ? 'Clear' : 'Pending' %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 2rem;">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📊</div>
+                                        <h3 class="empty-title">No Customers Found</h3>
+                                        <p class="empty-description">No customer data available to display</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let currentFilter = 'all';
+        let allCustomers = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const customerRows = document.querySelectorAll('.customer-row');
+            allCustomers = Array.from(customerRows);
+            
+            const filterButtons = document.querySelectorAll('.fp-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    applyFilter(filter);
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            const mobileNumbers = document.querySelectorAll('.customer-mobile');
+            mobileNumbers.forEach(mobile => {
+                mobile.style.cursor = 'pointer';
+                mobile.title = 'Click to copy';
+                
+                mobile.addEventListener('click', function() {
+                    const text = this.textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        Swal.fire({
+                            title: 'Copied!',
+                            text: 'Mobile number copied to clipboard',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    });
+                });
+            });
+        });
+
+        function applyFilter(filter) {
+            currentFilter = filter;
+            const q = (document.getElementById('rptSearch')?.value || '').toLowerCase().trim();
+            document.querySelectorAll('.customer-row').forEach(row => {
+                const status = row.getAttribute('data-status');
+                const name = (row.getAttribute('data-name') || '');
+                const mobile = (row.getAttribute('data-mobile') || '').toLowerCase();
+                const matchesSearch = !q || name.includes(q) || mobile.includes(q);
+                const matchesFilter = filter === 'all' || status === filter;
+                row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+            });
+        }
+
+        function searchReport() {
+            applyFilter(currentFilter);
+        }
+
+        function generatePDF() {
+            // Show loading
+            Swal.fire({
+                title: 'Generating PDF Report...',
+                text: 'Please wait while we create your report...',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                // Determine the type based on current filter
+                let type = 'all';
+                if (currentFilter === 'clear') {
+                    type = 'clear';
+                } else if (currentFilter === 'pending') {
+                    type = 'pending';
+                }
+
+                // Create a temporary link to trigger download
+                const link = document.createElement('a');
+                link.href = `/customers/download-pdf/${type}`;
+                link.download = `${type}_customers_report.pdf`;
+                
+                // Append to body, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Close loading and show success
+                setTimeout(() => {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'PDF Report Generated!',
+                        text: `Your ${currentFilter} customers report has been downloaded successfully.`,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                }, 1000);
+
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                Swal.close();
+                Swal.fire({
+                    title: 'PDF Generation Failed',
+                    text: 'Unable to generate PDF report. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    </script>
+
+
+</body>
+</html>

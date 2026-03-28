@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Settings - AgriCrm</title>
+
+
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+
+    <style>
+        :root {
+            --primary-color: #1a6b3c;
+            --primary-mid: #2d9e5f;
+            --danger-color: #dc2626;
+            --text-color: #111827;
+            --text-secondary: #6b7280;
+            --background-color: #ffffff;
+            --light-gray: #f7f8fa;
+            --white: #ffffff;
+            --border-color: #e5e7eb;
+            --border-radius: 8px;
+            --shadow: 0 1px 6px rgba(0,0,0,0.07);
+            --ig-bg: #f9fafb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Poppins', -apple-system, sans-serif;
+            font-size: 13px; color: var(--text-color);
+            background: var(--light-gray);
+        }
+        .container { max-width: 680px; margin: 0 auto; padding: 0.75rem 1rem; }
+
+        /* Profile Section */
+        .profile-section { background: transparent; }
+        .profile-card {
+            background: #fff; border: 1px solid var(--border-color);
+            border-radius: 10px; box-shadow: var(--shadow);
+            margin-bottom: 0.75rem; overflow: hidden;
+        }
+        .profile-header {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px; border-bottom: 1px solid #f3f4f6;
+        }
+        .profile-image-container { flex-shrink: 0; }
+        .profile-avatar-wrapper { cursor: pointer; }
+        .profile-avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            object-fit: cover; border: 2px solid var(--border-color);
+        }
+        .profile-avatar-placeholder {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 22px; font-weight: 700;
+        }
+        .profile-info { flex: 1; min-width: 0; }
+        .profile-top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .profile-name { font-size: 14px; font-weight: 700; color: var(--text-color); }
+        .profile-actions { display: flex; gap: 6px; }
+        .profile-action-btn {
+            background: var(--ig-bg); border: 1px solid var(--border-color);
+            padding: 4px 12px; border-radius: 6px; font-weight: 600;
+            font-size: 11px; cursor: pointer; color: var(--text-color);
+            font-family: 'Poppins', sans-serif; transition: all 0.2s;
+        }
+        .profile-action-btn:hover { background: #f0fdf4; border-color: #1a6b3c; color: #1a6b3c; }
+
+        /* Stats */
+        .profile-stats { display: grid; grid-template-columns: repeat(3,1fr); }
+        .stat-card-item {
+            padding: 12px 8px; text-align: center;
+            border-right: 1px solid #f3f4f6;
+        }
+        .stat-card-item:last-child { border-right: none; }
+        .stat-card-item span { display: block; font-weight: 700; font-size: 16px; color: #1a6b3c; margin-bottom: 2px; }
+        .stat-card-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+
+        /* Profile Sub-label */
+        .profile-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* Info Card */
+        .info-card {
+            background: #fff; border: 1px solid var(--border-color);
+            border-radius: 10px; box-shadow: var(--shadow);
+            margin-bottom: 0.75rem; overflow: hidden;
+            padding: 0 18px;
+        }
+        .info-card-title {
+            font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: #374151; padding: 10px 0 4px; font-weight: 700;
+        }
+        .info-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0; border-top: 1px solid #f3f4f6; font-size: 12px; color: #111827;
+            font-weight: 500;
+        }
+        .info-row i { width: 14px; text-align: center; color: #1a6b3c; font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+        .info-row span { flex: 1; line-height: 1.5; }
+
+        /* Action Cards */
+        .action-card {
+            background: #fff; border: 1px solid var(--border-color);
+            border-radius: 10px; box-shadow: var(--shadow);
+            margin-bottom: 0.75rem; display: flex; gap: 0.5rem; padding: 12px 14px;
+        }
+        .action-btn {
+            flex: 1; padding: 8px 10px; border-radius: 7px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: 'Poppins', sans-serif; border: 1px solid;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.15s;
+        }
+        .edit-btn { background: #f0fdf4; color: #1a6b3c; border-color: #d1fae5; }
+        .edit-btn:hover { background: #dcfce7; }
+        .pwd-btn { background: #f9fafb; color: #374151; border-color: #e5e7eb; }
+        .pwd-btn:hover { background: #f3f4f6; }
+        .logout-btn { background: #fef2f2; color: #dc2626; border-color: #fecaca; width: 100%; }
+        .logout-btn:hover { background: #fee2e2; }
+
+
+        @media (max-width: 768px) {
+            .profile-section {
+                padding: 20px 0;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+                margin-bottom: 24px;
+            }
+
+            .profile-image-container {
+                flex: none;
+            }
+
+            .profile-avatar,
+            .profile-avatar-placeholder {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+
+            .profile-info {
+                width: 100%;
+                text-align: center;
+            }
+
+            .profile-top-row {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .profile-name {
+                font-size: 24px;
+            }
+
+            .profile-stats {
+                gap: 0;
+                justify-content: space-evenly;
+                border-top: 1px solid var(--border-color);
+                border-bottom: 1px solid var(--border-color);
+                padding: 12px 0;
+                margin: 16px 0;
+            }
+
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                font-size: 14px;
+                color: var(--text-secondary);
+            }
+
+            .stat-item span {
+                color: var(--text-color);
+                font-size: 16px;
+                margin-bottom: 2px;
+            }
+
+            .profile-bio {
+                text-align: left;
+                padding: 0 4px;
+            }
+
+            .bio-name {
+                font-size: 16px;
+            }
+
+            .contact-info {
+                text-align: left;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--white);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'settings'}) %>
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-cog"></i> Settings</div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar-wrapper" onclick="uploadShopImage()" title="Change Photo">
+                    <% if (user.shop_image) { %>
+                        <img src="<%= user.shop_image %>" alt="<%= user.shop_name %>" class="profile-avatar">
+                    <% } else { %>
+                        <div class="profile-avatar-placeholder"><%= user.shop_name.charAt(0).toUpperCase() %></div>
+                    <% } %>
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name"><%= user.shop_name %></h2>
+                    <div class="profile-sub"><%= user.owner_name %></div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="profile-stats">
+                <div class="stat-card-item">
+                    <span><%= customersCreatedByUser %></span>
+                    <div class="stat-card-label">Customers</div>
+                </div>
+                <div class="stat-card-item">
+                    <span><%= totalTransactions %></span>
+                    <div class="stat-card-label">Transactions</div>
+                </div>
+                <div class="stat-card-item">
+                    <span><%= activeSessions %></span>
+                    <div class="stat-card-label">Sessions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Info Card -->
+        <div class="info-card">
+            <div class="info-card-title">Shop Details</div>
+            <div class="info-row"><i class="fas fa-phone-alt"></i><span><%= user.owner_phone %></span></div>
+            <div class="info-row"><i class="fas fa-envelope"></i><span><%= user.email %></span></div>
+            <div class="info-row"><i class="fas fa-map-marker-alt"></i><span><%= user.shop_address %><% if (user.district) { %>, <%= user.district %><% } %></span></div>
+            <% if (user.pincode) { %>
+            <div class="info-row"><i class="fas fa-location-arrow"></i><span>Pincode: <%= user.pincode %></span></div>
+            <% } %>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-card">
+            <button class="action-btn edit-btn" onclick="uploadShopImage()">
+                <i class="fas fa-camera"></i> Edit Profile Photo
+            </button>
+            <button class="action-btn pwd-btn" onclick="changePassword()">
+                <i class="fas fa-lock"></i> Change Password
+            </button>
+        </div>
+
+        <!-- Logout -->
+        <div class="action-card">
+            <button class="action-btn logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Log Out
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        'use strict';
+
+        // Change Password Function
+        function changePassword() {
+            Swal.fire({
+                title: 'Change Password',
+                html: `
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Current Password</label>
+                            <input type="password" id="currentPassword" class="swal2-input" placeholder="Enter current password" style="margin: 0; width: 100%;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">New Password</label>
+                            <input type="password" id="newPassword" class="swal2-input" placeholder="Enter new password" style="margin: 0; width: 100%;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" class="swal2-input" placeholder="Confirm new password" style="margin: 0; width: 100%;">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Change Password',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0095f6',
+                preConfirm: async () => {
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        Swal.showValidationMessage('Please fill in all fields');
+                        return false;
+                    }
+
+                    if (newPassword.length < 8) {
+                        Swal.showValidationMessage('New password must be at least 8 characters long');
+                        return false;
+                    }
+
+                    if (newPassword !== confirmPassword) {
+                        Swal.showValidationMessage('New passwords do not match');
+                        return false;
+                    }
+
+                    try {
+                        const response = await fetch('/auth/change-password', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                current_password: currentPassword,
+                                new_password: newPassword
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Failed to change password');
+                        }
+
+                        return data;
+                    } catch (error) {
+                        Swal.showValidationMessage(error.message);
+                        return false;
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Password changed successfully!',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+
+        // Upload Shop Image
+        function uploadShopImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
+
+            input.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        Swal.fire('Error!', 'File size must be less than 2MB', 'error');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('shop_image', file);
+
+                    Swal.fire({
+                        title: 'Uploading...',
+                        text: 'Please wait while we upload your image',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch('/auth/upload-image', {
+                        method: 'PUT',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                Swal.fire('Error!', data.error, 'error');
+                            } else {
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Shop image updated successfully!',
+                                    icon: 'success',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                setTimeout(() => location.reload(), 1500);
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire('Error!', 'Failed to upload image. Please try again.', 'error');
+                        });
+                }
+            });
+
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        }
+
+
+
+        // Logout
+        function logout() {
+            Swal.fire({
+                title: 'Log out?',
+                text: 'Are you sure you want to log out of your account?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ed4956',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Log Out',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/logout';
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Profile page initialized');
+        });
+    </script>
+
+
+</body>
+
+</html>

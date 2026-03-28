@@ -1,0 +1,105 @@
+{
+  "name": "agricrm",
+  "version": "1.0.0",
+  "description": "AgriCrm.in - Agricultural Credit Score System for 1M+ Daily Users",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "prod": "NODE_ENV=production node index.js",
+    "prod-optimized": "node --expose-gc scripts/start-production.js",
+    "cluster": "NODE_ENV=production node index.js",
+    "deploy": "npm install && NODE_ENV=production node index.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "security-check": "npm audit --audit-level=high",
+    "health-check": "curl -f http://localhost:3000/api/health || exit 1",
+    "install-deps": "npm install",
+    "build": "echo 'No build step required for Node.js app'",
+    "optimize": "node scripts/optimize-production.js",
+    "pre-deploy": "npm run optimize && npm run security-check",
+    "monitor": "node scripts/monitor.js",
+    "start-minimal": "NODE_ENV=production ENABLE_LOGGING=false node --expose-gc --max_old_space_size=512 index.js"
+  },
+  "keywords": [
+    "agricrm",
+    "credit-score",
+    "agriculture",
+    "fertilizer-shop",
+    "crm",
+    "nodejs",
+    "express",
+    "postgresql",
+    "bunny-cdn"
+  ],
+  "author": "AgriCrm.in Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ad-itya-8788/agricrm.git"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bcrypt": "^5.1.1",
+    "cluster": "^0.7.7",
+    "compression": "^1.7.4",
+    "connect-flash": "^0.1.1",
+    "connect-pg-simple": "^9.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.10",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "helmet": "^7.1.0",
+    "mime-types": "^2.1.35",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.17.1",
+    "pg": "^8.11.3",
+    "puppeteer": "^24.15.0",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.0",
+    "supertest": "^6.3.3"
+  },
+  "optionalDependencies": {
+  },
+  "config": {
+    "unsafe-perm": false
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "index.js",
+    "dbconnect.js",
+    "routes/",
+    "public/",
+    ".env.example",
+    "README.md"
+  ],
+  "directories": {
+    "lib": "routes",
+    "public": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/ad-itya-8788/agricrm/issues"
+  },
+  "homepage": "https://www.agricrm.in"
+}

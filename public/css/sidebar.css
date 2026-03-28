@@ -1,0 +1,159 @@
+/* ============================================================
+   AgriCRM - Left Sidebar Navigation
+   Replaces bottom nav bar across all ERP pages
+   ============================================================ */
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 220px;
+    background: #fff;
+    border-right: 1px solid #e5e7eb;
+    display: flex; flex-direction: column;
+    z-index: 400;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+}
+
+/* Brand / Logo area */
+.sidebar-brand {
+    height: 56px;
+    padding: 0 16px;
+    display: flex; align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.sidebar-brand img { height: 34px; object-fit: contain; }
+
+/* Section label */
+.sidebar-section-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    color: #9ca3af; text-transform: uppercase;
+    padding: 14px 16px 4px;
+}
+
+/* Nav area */
+.sidebar-nav {
+    flex: 1; padding: 8px 10px;
+    overflow-y: auto; display: flex;
+    flex-direction: column; gap: 1px;
+}
+
+/* Each nav item */
+.sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    text-decoration: none; color: #374151;
+    font-size: 12.5px; font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.15s; line-height: 1;
+    white-space: nowrap;
+}
+.sidebar-item i {
+    width: 18px; text-align: center;
+    font-size: 14px; color: #9ca3af;
+    flex-shrink: 0; transition: color 0.15s;
+}
+.sidebar-item:hover {
+    background: #f0fdf4; color: #1a6b3c;
+}
+.sidebar-item:hover i { color: #1a6b3c; }
+.sidebar-item.active {
+    background: #f0fdf4; color: #1a6b3c; font-weight: 700;
+}
+.sidebar-item.active i { color: #1a6b3c; }
+
+/* Add Customer item — highlighted */
+.sidebar-item.add-item {
+    background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+    color: white; font-weight: 600; margin-top: 6px;
+}
+.sidebar-item.add-item i { color: white; }
+.sidebar-item.add-item:hover {
+    background: linear-gradient(135deg, #155c32, #248a51);
+    color: white;
+}
+.sidebar-item.add-item:hover i { color: white; }
+
+/* Divider */
+.sidebar-divider {
+    height: 1px; background: #f3f4f6; margin: 6px 10px;
+}
+
+/* Footer / logout area */
+.sidebar-footer {
+    padding: 10px; border-top: 1px solid #e5e7eb; flex-shrink: 0;
+}
+.sidebar-logout {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    text-decoration: none; color: #dc2626;
+    font-size: 12.5px; font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    transition: background 0.15s; white-space: nowrap;
+}
+.sidebar-logout i { width: 18px; text-align: center; font-size: 14px; }
+.sidebar-logout:hover { background: #fef2f2; }
+
+/* ===== BODY OFFSET ===== */
+body.sidebar-layout {
+    padding-left: 220px;
+    padding-bottom: 0 !important;
+}
+
+/* ===== TOP PAGE BAR (thin breadcrumb bar) ===== */
+.page-topbar {
+    background: #fff; border-bottom: 1px solid #e5e7eb;
+    height: 52px; padding: 0 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.page-topbar-title {
+    font-size: 14px; font-weight: 700; color: #111827;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.page-topbar-title i { color: #1a6b3c; font-size: 13px; }
+.page-topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* ===== MOBILE: Collapse sidebar, show bottom bar ===== */
+@media (max-width: 767px) {
+    .sidebar {
+        width: 100%; height: 58px;
+        top: auto; bottom: 0; left: 0;
+        flex-direction: row; border-right: none;
+        border-top: 1px solid #e5e7eb;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .sidebar-brand { display: none; }
+    .sidebar-section-label { display: none; }
+    .sidebar-divider { display: none; }
+    .sidebar-nav {
+        flex-direction: row; justify-content: space-around;
+        align-items: center; padding: 0 4px; gap: 0;
+        width: 100%; overflow: visible;
+    }
+    .sidebar-item {
+        flex-direction: column; gap: 2px;
+        padding: 4px 8px; font-size: 9px; font-weight: 600;
+        text-align: center; border-radius: 0;
+    }
+    .sidebar-item i { width: auto; font-size: 19px; }
+    .sidebar-item.add-item {
+        background: none;
+        color: #9ca3af;
+        margin-top: 0;
+    }
+    .sidebar-item.add-item i {
+        background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+        color: white; border-radius: 50%;
+        width: 40px; height: 40px; font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+        margin-top: -10px;
+        box-shadow: 0 4px 12px rgba(26,107,60,0.4);
+    }
+    .sidebar-item.add-item:hover { background: none; color: #9ca3af; }
+    .sidebar-item.add-item:hover i { background: linear-gradient(135deg, #1a6b3c, #2d9e5f); color: white; }
+    .sidebar-footer { display: none; }
+    body.sidebar-layout { padding-left: 0; padding-bottom: 58px !important; }
+    .page-topbar { position: sticky; top: 0; z-index: 100; }
+}

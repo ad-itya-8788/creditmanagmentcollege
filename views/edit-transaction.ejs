@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Payment - AgriCrm</title>
+
+    <!-- SEO Meta Tags - No Index -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="bingbot" content="noindex, nofollow">
+    <meta name="description" content="Update payment for customer transaction">
+    <meta name="author" content="AgriCrm">
+
+    <!-- External CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --secondary-color: #28A745;
+            --success-color: #28A745;
+            --warning-color: #FFC107;
+            --danger-color: #DC3545;
+            --info-color: #17A2B8;
+            --text-color: #111827;
+            --text-secondary: #374151;
+            --text-muted: #374151;
+            --background-color: #ffffff;
+            --light-gray: #f8f9fa;
+            --white: #ffffff;
+            --border-color: #dbdbdb;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--background-color);
+            padding: 0.5rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            height: 40px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1rem;
+            padding-bottom: 100px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--background-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Customer Info Card */
+        .customer-info-card {
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .customer-info-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .customer-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .customer-details h3 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .customer-details p {
+            margin: 0.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Transaction Details */
+        .transaction-section {
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .transaction-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            background: var(--light-gray);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .detail-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .detail-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: 1.2;
+            max-width: 100%;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Payment Summary */
+        .payment-summary {
+            background: linear-gradient(135deg, var(--success-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .payment-summary h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .payment-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .payment-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .payment-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .payment-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .payment-item.completed {
+            background: rgba(40, 167, 69, 0.2);
+            border: 2px solid rgba(40, 167, 69, 0.5);
+        }
+
+        .payment-item.completed .payment-value {
+            color: #28a745;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #333333;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 50px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+            background: #ffffff;
+            color: #000000;
+            font-weight: 600;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #6c757d;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #20c997);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Rating Styles */
+        .rating-container {
+            margin-top: 0.5rem;
+        }
+
+        .stars {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .star {
+            font-size: 1.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #ffc107;
+        }
+
+        .star.selected {
+            color: #ffc107;
+        }
+
+        .rating-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .transaction-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .payment-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .customer-info-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .transaction-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .transaction-details {
+                grid-template-columns: 1fr;
+                gap: 0.4rem;
+            }
+
+            .detail-item {
+                padding: 0.4rem;
+                min-height: 60px;
+            }
+
+            .detail-value {
+                font-size: 0.75rem;
+                max-height: 2em;
+                -webkit-line-clamp: 2;
+            }
+
+            .detail-label {
+                font-size: 0.6rem;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--white);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'customers'}) %>
+
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-edit"></i> Update Payment</div>
+        <div class="page-topbar-right">
+            <button onclick="window.history.back()" style="background:#f3f4f6;border:none;color:#374151;width:34px;height:34px;border-radius:7px;cursor:pointer;font-size:0.9rem;"><i class="fas fa-chevron-left"></i></button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h5>
+                    <i class="fas fa-edit"></i>
+                    Update Payment
+                </h5>
+            </div>
+
+            <!-- Customer Information Card -->
+            <div class="customer-info-card">
+                <div class="customer-info-header">
+                    <div class="customer-avatar">
+                        <%= customer.name.charAt(0).toUpperCase() %>
+                    </div>
+                    <div class="customer-details">
+                        <h3>
+                            <%= customer.name %>
+                        </h3>
+                        <p><i class="fas fa-mobile-alt"></i>
+                            <%= customer.mobile_number %>
+                        </p>
+                        <p><i class="fas fa-map-marker-alt"></i>
+                            <%= customer.village_city %>, <%= customer.district %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Details -->
+            <div class="transaction-section">
+                <h3 class="section-title">
+                    <i class="fas fa-receipt"></i> Transaction Details
+                </h3>
+
+                <div class="transaction-details">
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-box" style="color: #007bff;"></i>
+                        </div>
+                        <div class="detail-value">
+                            <%= transaction.product_service %>
+                        </div>
+                        <div class="detail-label">Product/Service</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-credit-card" style="color: #28a745;"></i>
+                        </div>
+                        <div class="detail-value">
+                            <%= transaction.transaction_type %>
+                        </div>
+                        <div class="detail-label">Payment Type</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-calendar-check" style="color: #28a745;"></i>
+                        </div>
+                        <div class="detail-value">
+                            <%= new Date(transaction.payment_date).toLocaleDateString() %>
+                        </div>
+                        <div class="detail-label">First Payment Date</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-calendar-alt" style="color: #007bff;"></i>
+                        </div>
+                        <div class="detail-value">
+                            <% if (transaction.next_payment_date) { %>
+                                <%= new Date(transaction.next_payment_date).toLocaleDateString() %>
+                                    <% } else { %>
+                                        <span style="color: #6c757d;">Not Set</span>
+                                        <% } %>
+                        </div>
+                        <div class="detail-label">Next Payment Date</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <% if (transaction.payment_completed_at) { %>
+                                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                <% } else { %>
+                                    <i class="fas fa-clock" style="color: #ffc107;"></i>
+                                    <% } %>
+                        </div>
+                        <div class="detail-value">
+                            <% if (transaction.payment_completed_at) { %>
+                                <%= new Date(transaction.payment_completed_at).toLocaleDateString() %>
+                                    <% } else { %>
+                                        <span style="color: #ffc107;">Pending</span>
+                                        <% } %>
+                        </div>
+                        <div class="detail-label">Payment Status</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-sticky-note" style="color: #17a2b8;"></i>
+                        </div>
+                        <div class="detail-value"
+                            style="word-wrap: break-word; max-height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            <%= transaction.notes || 'No notes' %>
+                        </div>
+                        <div class="detail-label">Notes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="payment-summary">
+                <h3><i class="fas fa-credit-card"></i> Payment Summary</h3>
+                <div class="payment-grid">
+                    <div class="payment-item">
+                        <div class="payment-value">₹<%= transaction.total_amount %>
+                        </div>
+                        <div class="payment-label">Original Amount</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-value">₹<%= transaction.paid_amount %>
+                        </div>
+                        <div class="payment-label">Already Paid</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-value">₹<%= transaction.remaining_amount %>
+                        </div>
+                        <div class="payment-label">Due Amount</div>
+                    </div>
+                    <% if (transaction.payment_completed_at) { %>
+                        <div class="payment-item completed">
+                            <div class="payment-value">
+                                <i class="fas fa-check-circle"></i>
+                                <%= new Date(transaction.payment_completed_at).toLocaleDateString() %>
+                            </div>
+                            <div class="payment-label">Payment Completed</div>
+                        </div>
+                        <% } %>
+                </div>
+            </div>
+
+            <!-- Update Payment Form -->
+            <div class="transaction-section">
+                <h3 class="section-title">
+                    <i class="fas fa-edit"></i> Update Payment
+                </h3>
+
+                <form id="updatePaymentForm">
+                    <input type="hidden" id="transactionId" value="<%= transaction.id %>">
+                    <input type="hidden" id="customerId" value="<%= customer.id %>">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentAmount">
+                                <i class="fas fa-money-bill-wave"></i> Payment Amount (₹)
+                            </label>
+                            <input type="number" id="paymentAmount" placeholder="Enter payment amount"
+                                oninput="calculateNewRemaining()" required step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentDate">
+                                <i class="fas fa-calendar-day"></i> Payment Date
+                            </label>
+                            <input type="date" id="paymentDate" value="<%= new Date().toISOString().split('T')[0] %>"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div id="newRemainingDisplay" class="payment-summary" style="margin: 0; text-align: center;">
+                            <div class="payment-value">₹<%= transaction.remaining_amount %>
+                            </div>
+                            <div class="payment-label">Remaining After Payment</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentNotes">
+                            <i class="fas fa-sticky-note"></i> Payment Notes (Optional)
+                        </label>
+                        <textarea id="paymentNotes" rows="3" placeholder="Any notes about this payment..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerRating">
+                            <i class="fas fa-star"></i> Customer Rating (Optional)
+                        </label>
+                        <div class="rating-container">
+                            <div class="stars">
+                                <i class="fas fa-star star" data-rating="1"></i>
+                                <i class="fas fa-star star" data-rating="2"></i>
+                                <i class="fas fa-star star" data-rating="3"></i>
+                                <i class="fas fa-star star" data-rating="4"></i>
+                                <i class="fas fa-star star" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" id="customerRating" value="<%= transaction.rating || '' %>">
+                            <span id="ratingText" class="rating-text">Select rating</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-success" onclick="updatePayment()">
+                            <i class="fas fa-save"></i> Update Payment
+                        </button>
+                        <button type="button" class="btn" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Initialize remaining amount display
+        calculateNewRemaining();
+
+        // Initialize rating stars
+        initializeRating();
+
+        function initializeRating() {
+            const stars = document.querySelectorAll('.star');
+            const ratingInput = document.getElementById('customerRating');
+            const ratingText = document.getElementById('ratingText');
+            const currentRating = parseInt(ratingInput.value) || 0;
+
+            // Set initial rating if exists
+            if (currentRating > 0) {
+                setRating(currentRating);
+            }
+
+            // Add click event listeners
+            stars.forEach(star => {
+                star.addEventListener('click', function () {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    setRating(rating);
+                });
+
+                star.addEventListener('mouseenter', function () {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    highlightStars(rating);
+                });
+
+                star.addEventListener('mouseleave', function () {
+                    const currentRating = parseInt(ratingInput.value) || 0;
+                    highlightStars(currentRating);
+                });
+            });
+        }
+
+        function setRating(rating) {
+            const stars = document.querySelectorAll('.star');
+            const ratingInput = document.getElementById('customerRating');
+            const ratingText = document.getElementById('ratingText');
+
+            ratingInput.value = rating;
+            highlightStars(rating);
+
+            // Update rating text
+            const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+            ratingText.textContent = ratingLabels[rating] || 'Select rating';
+        }
+
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                const starRating = index + 1;
+                if (starRating <= rating) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+            });
+        }
+
+        function calculateNewRemaining() {
+            const currentRemaining = parseFloat('<%= transaction.remaining_amount %>') || 0;
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+            const newRemaining = currentRemaining - paymentAmount;
+
+            const remainingDisplay = document.getElementById('newRemainingDisplay');
+            const remainingValue = remainingDisplay.querySelector('.payment-value');
+            const remainingLabel = remainingDisplay.querySelector('.payment-label');
+
+            remainingValue.textContent = `₹${newRemaining.toFixed(2)}`;
+
+            if (newRemaining > 0) {
+                remainingDisplay.style.background = 'linear-gradient(135deg, #dc3545, #e83e8c)';
+                remainingLabel.textContent = 'Remaining After Payment';
+            } else if (newRemaining === 0) {
+                remainingDisplay.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                remainingLabel.textContent = 'Fully Paid';
+            } else {
+                remainingDisplay.style.background = 'linear-gradient(135deg, #ffc107, #fd7e14)';
+                remainingLabel.textContent = 'Overpaid Amount';
+            }
+        }
+
+        function updatePayment() {
+            const transactionId = document.getElementById('transactionId').value;
+            const customerId = document.getElementById('customerId').value;
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const paymentNotes = document.getElementById('paymentNotes').value;
+            const customerRating = parseInt(document.getElementById('customerRating').value) || null;
+            const currentRemaining = parseFloat('<%= transaction.remaining_amount %>') || 0;
+
+            // Validation
+            if (paymentAmount < 0) {
+                Swal.fire('Error', 'Please enter a valid payment amount (cannot be negative)', 'error');
+                return;
+            }
+
+            if (!paymentDate) {
+                Swal.fire('Error', 'Please select payment date', 'error');
+                return;
+            }
+
+            if (paymentAmount > currentRemaining) {
+                Swal.fire('Error', 'Payment amount cannot exceed remaining amount', 'error');
+                return;
+            }
+
+            // Show confirmation
+            Swal.fire({
+                title: 'Update Payment',
+                text: `Are you sure you want to add ₹${paymentAmount.toFixed(2)} to this transaction?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Update Payment',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Updating Payment...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Prepare data
+                    const paymentData = {
+                        transaction_id: transactionId,
+                        customer_id: customerId,
+                        payment_amount: paymentAmount,
+                        payment_date: paymentDate,
+                        notes: paymentNotes,
+                        rating: customerRating
+                    };
+
+                    // Send update request
+                    fetch('/customers/add-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(paymentData)
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const newRemaining = parseFloat(document.getElementById('newRemainingDisplay').querySelector('.payment-value').textContent.replace('₹', ''));
+                                let successMessage = 'Payment updated successfully';
+
+                                if (newRemaining <= 0) {
+                                    successMessage = 'Payment completed! Transaction is now fully paid.';
+                                }
+
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: successMessage,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    window.location.href = '/customers';
+                                });
+                            } else {
+                                Swal.fire('Error', data.message || 'Failed to update payment', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire('Error', 'Failed to update payment', 'error');
+                        });
+                }
+            });
+        }
+    </script>
+
+    <!-- Page Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <%= new Date().getFullYear() %> AgriCrm.in - Agricultural Credit Management</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

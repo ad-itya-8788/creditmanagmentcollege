@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriCrm.in - Agricultural Credit Management</title>
+    <meta name="description" content="AgriCrm.in - Manage customer credit, track payments, and grow your fertilizer shop business.">
+    <meta name="author" content="AgriCrm.in">
+    <meta name="robots" content="index, follow">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #fff; color: #111; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* Header */
+        .top-bar {
+            background: #fff; border-bottom: 1px solid #e5e7eb;
+            height: 56px; padding: 0 1.75rem;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            position: sticky; top: 0; z-index: 10;
+        }
+        .top-bar img { height: 34px; object-fit: contain; }
+        .top-bar-right { display: flex; align-items: center; gap: 0.6rem; }
+        .btn-outline {
+            font-size: 0.82rem; font-weight: 600; color: #374151;
+            text-decoration: none; padding: 0.38rem 1rem;
+            border: 1.5px solid #d1d5db; border-radius: 8px; transition: all 0.15s;
+        }
+        .btn-outline:hover { border-color: #1a6b3c; color: #1a6b3c; }
+        .btn-solid {
+            font-size: 0.82rem; font-weight: 600; color: white;
+            text-decoration: none; padding: 0.38rem 1rem;
+            background: #1a6b3c; border: 1.5px solid #1a6b3c; border-radius: 8px; transition: background 0.15s;
+        }
+        .btn-solid:hover { background: #155e34; }
+
+        /* Hero */
+        .hero {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 3rem 1.5rem 2rem;
+        }
+        .hero-inner { text-align: center; max-width: 480px; }
+        .hero-inner img { height: 64px; object-fit: contain; margin-bottom: 1.5rem; }
+        .hero-inner h1 {
+            font-size: 1.75rem; font-weight: 800; color: #111; line-height: 1.3;
+            margin-bottom: 0.75rem;
+        }
+        @media (max-width: 480px) { .hero-inner h1 { font-size: 1.4rem; } }
+        .hero-inner p { font-size: 0.9rem; color: #6b7280; line-height: 1.65; margin-bottom: 2rem; }
+
+        .hero-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+        .cta-primary {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.7rem 1.75rem; background: #1a6b3c; color: white;
+            font-size: 0.9rem; font-weight: 600; border-radius: 10px;
+            text-decoration: none; transition: background 0.15s, transform 0.1s;
+        }
+        .cta-primary:hover { background: #155e34; transform: translateY(-1px); }
+        .cta-secondary {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.7rem 1.75rem; background: #fff; color: #1a6b3c;
+            font-size: 0.9rem; font-weight: 600; border-radius: 10px;
+            text-decoration: none; border: 1.5px solid #1a6b3c;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .cta-secondary:hover { background: #f0faf4; transform: translateY(-1px); }
+
+        /* Features strip */
+        .features-strip {
+            display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+            padding: 2rem 1.5rem; border-top: 1px solid #f3f4f6;
+        }
+        .feat {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.78rem; color: #6b7280;
+        }
+        .feat i { color: #1a6b3c; font-size: 0.9rem; }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.72rem; color: #9ca3af;
+            display: flex; align-items: center; justify-content: center; gap: 1rem;
+            flex-wrap: wrap;
+        }
+        footer a { color: #9ca3af; text-decoration: none; }
+        footer a:hover { color: #1a6b3c; }
+    </style>
+</head>
+<body>
+
+<header class="top-bar">
+    <img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'">
+    <div class="top-bar-right">
+        <a href="/login" class="btn-outline">Login</a>
+        <a href="/signup" class="btn-solid">Sign Up Free</a>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="hero-inner">
+        <img src="/img/navlogoagri.png" alt="AgriCRM" onerror="this.style.display='none'">
+        <h1>Credit Management for Fertilizer Shops</h1>
+        <p>Track customer credit, record payments, and manage your shop's outstanding dues — all from one simple system.</p>
+        <div class="hero-actions">
+            <a href="/signup" class="cta-primary"><i class="fas fa-user-plus"></i> Get Started Free</a>
+            <a href="/login" class="cta-secondary"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+        </div>
+    </div>
+</section>
+
+<div class="features-strip">
+    <div class="feat"><i class="fas fa-check-circle"></i> Customer Credit Tracking</div>
+    <div class="feat"><i class="fas fa-check-circle"></i> Payment History Logs</div>
+    <div class="feat"><i class="fas fa-check-circle"></i> Credit Score System</div>
+    <div class="feat"><i class="fas fa-check-circle"></i> Works on Mobile</div>
+</div>
+
+<footer>
+    <span>&copy; AgriCrm.in</span>
+    <a href="/privacy-policy">Privacy Policy</a>
+    <a href="/terms">Terms</a>
+    <a href="/login">Login</a>
+</footer>
+
+<script>
+    (async () => {
+        try {
+            const r = await fetch('/auth/check-auth');
+            const d = await r.json();
+            if (d.authenticated) window.location.replace('/dashboard');
+        } catch {}
+    })();
+</script>
+</body>
+</html>

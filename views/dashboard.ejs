@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AgriCrm</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <style>
+        :root {
+            --green-dark: #1a6b3c;
+            --green-mid: #2d9e5f;
+            --green-light: #e8f5e9;
+            --red: #e74c3c;
+            --orange: #f39c12;
+            --blue: #2563eb;
+            --bg: #f0f4f0;
+            --white: #ffffff;
+            --text: #1a1a2e;
+            --text-muted: #374151;
+            --border: #e0e8e0;
+            --shadow-sm: 0 1px 4px rgba(0,0,0,0.08);
+            --shadow: 0 2px 12px rgba(0,0,0,0.09);
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f7f8fa; color: var(--text); font-size: 13px; }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            padding: 1.25rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* ===== KPI CARDS ===== */
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem; margin-bottom: 1rem;
+        }
+        @media (min-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+            .kpi-value { font-size: 1.35rem; }
+        }
+        .kpi-card {
+            background: var(--white); border-radius: var(--radius);
+            padding: 0.85rem; box-shadow: var(--shadow);
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .kpi-card::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .kpi-card.green::after { background: linear-gradient(90deg, #1a6b3c, #2d9e5f); }
+        .kpi-card.red::after { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+        .kpi-card.orange::after { background: linear-gradient(90deg, #d35400, #f39c12); }
+        .kpi-card.blue::after { background: linear-gradient(90deg, #1a56a0, #2563eb); }
+
+        .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.5rem; }
+        .kpi-icon {
+            width: 36px; height: 36px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; flex-shrink: 0;
+        }
+        .kpi-icon.green { background: #e8f5e9; color: #1a6b3c; }
+        .kpi-icon.red { background: #fde8e8; color: #c0392b; }
+        .kpi-icon.orange { background: #fff3e0; color: #d35400; }
+        .kpi-icon.blue { background: #e8f0fe; color: #1a56a0; }
+
+        .kpi-value { font-size: 1.35rem; font-weight: 800; color: var(--text); line-height: 1; }
+        .kpi-value.small { font-size: 1rem; }
+        .kpi-label { font-size: 0.68rem; color: var(--text-muted); font-weight: 500; margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 0.4px; }
+        .kpi-sub { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.25rem; }
+        .kpi-sub.pos { color: #1a6b3c; }
+        .kpi-sub.neg { color: #c0392b; }
+
+        /* ===== FINANCIAL OVERVIEW ===== */
+        .section-card {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+            margin-bottom: 1rem; overflow: hidden;
+        }
+        .section-head {
+            padding: 0.85rem 1rem 0.7rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .section-title {
+            font-size: 0.82rem; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .section-title i { color: var(--green-mid); }
+
+        /* Period filter pills */
+        .period-pills { display: flex; gap: 0.3rem; }
+        .pill {
+            font-size: 0.62rem; font-weight: 600; padding: 0.22rem 0.6rem;
+            border-radius: 20px; border: 1.5px solid var(--border);
+            background: var(--bg); color: var(--text-muted); cursor: pointer;
+            transition: all 0.15s; font-family: 'Poppins', sans-serif;
+        }
+        .pill.active { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+        .pill:hover:not(.active) { border-color: var(--green-mid); color: var(--green-mid); }
+
+        /* Financial summary bars */
+        .fin-body { padding: 1rem; }
+        .fin-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 0.85rem;
+        }
+        .fin-row:last-child { margin-bottom: 0; }
+        .fin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .fin-info { flex: 1; }
+        .fin-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 0.25rem; }
+        .fin-bar-track { height: 6px; background: #f0f0f0; border-radius: 6px; overflow: hidden; margin-bottom: 0.2rem; }
+        .fin-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
+        .fin-amount { font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+        .fin-loading { text-align: center; padding: 1rem; color: #6b7280; font-size: 0.8rem; }
+
+        /* ===== TRANSACTION BREAKDOWN ===== */
+        .tx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; padding: 1rem; }
+        .tx-box {
+            text-align: center; padding: 0.75rem 0.4rem; border-radius: 10px;
+        }
+        .tx-box.green-bg { background: #e8f5e9; }
+        .tx-box.red-bg { background: #fde8e8; }
+        .tx-box.orange-bg { background: #fff3e0; }
+        .tx-num { font-size: 1.3rem; font-weight: 800; display: block; margin-bottom: 0.2rem; }
+        .tx-num.green { color: #1a6b3c; }
+        .tx-num.red { color: #c0392b; }
+        .tx-num.orange { color: #d35400; }
+        .tx-lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        /* ===== QUICK ACTIONS ===== */
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding: 1rem; }
+        .action-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 0.5rem; padding: 1rem 0.5rem; border-radius: 10px;
+            text-decoration: none; font-size: 0.78rem; font-weight: 700;
+            transition: transform 0.15s, box-shadow 0.15s; color: white;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+        .action-btn i { font-size: 1.4rem; }
+        .action-btn.primary { background: linear-gradient(135deg, #1a6b3c, #2d9e5f); }
+        .action-btn.secondary { background: linear-gradient(135deg, #1a56a0, #2563eb); }
+        .action-btn.tertiary { background: linear-gradient(135deg, #d35400, #f39c12); }
+        .action-btn.quaternary { background: linear-gradient(135deg, #6d28d9, #8b5cf6); }
+
+
+        /* ===== DIVIDER LABEL ===== */
+        .divider-label {
+            font-size: 0.68rem; font-weight: 700; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.6px;
+            padding: 0 1rem 0.4rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ===== TWO COLUMN ROW ===== */
+        .two-col-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .two-col-row .section-card { margin-bottom: 0; }
+        @media (max-width: 767px) {
+            .two-col-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="sidebar-layout">
+
+<%
+    const shopName = (user && user.shop_name) ? user.shop_name : 'Your Shop';
+    const ownerName = (user && user.owner_name) ? user.owner_name : 'Owner';
+    const today = new Date();
+    const totalCredit = parseFloat(stats.totalCreditGiven) || 0;
+    const totalPaid = parseFloat(stats.totalPaidAmount) || 0;
+    const totalPending = parseFloat(stats.totalPendingAmount) || 0;
+    const payRatio = totalCredit > 0 ? Math.round((totalPaid / totalCredit) * 100) : 0;
+%>
+
+<%- include('partials/sidebar', {active: 'dashboard'}) %>
+
+<!-- Page Top Bar -->
+<div class="page-topbar">
+    <div class="page-topbar-title"><i class="fas fa-home"></i> Dashboard</div>
+    <div class="page-topbar-right" style="font-size:11px;color:#6b7280;text-align:right;">
+        <div style="font-weight:600;color:#374151;"><%= today.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) %></div>
+        <div style="margin-top:1px;"><i class="fas fa-circle" style="color:#22c55e;font-size:6px;margin-right:3px;"></i>Live</div>
+    </div>
+</div>
+
+<main class="main">
+
+    <!-- Welcome Row -->
+    <div style="margin-bottom:1rem;">
+        <div style="font-size:0.72rem;color:#6b7280;">Welcome back,</div>
+        <div style="font-size:1rem;font-weight:700;color:#111;display:flex;align-items:center;gap:0.3rem;"><i class="fas fa-store" style="font-size:0.85rem;color:#1a6b3c;"></i><%= shopName %></div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <a href="/customers" class="kpi-card green" style="text-decoration:none;color:inherit;">
+            <div class="kpi-top">
+                <div>
+                    <div class="kpi-value"><%= stats.totalCustomers || 0 %></div>
+                    <div class="kpi-label">Total Customers</div>
+                </div>
+                <div class="kpi-icon green"><i class="fas fa-users"></i></div>
+            </div>
+            <div class="kpi-sub pos"><i class="fas fa-user-plus"></i> <%= stats.newCustomersToday || 0 %> added today</div>
+        </a>
+
+        <div class="kpi-card red">
+            <div class="kpi-top">
+                <div>
+                    <div class="kpi-value small">₹<%= totalPending.toLocaleString('en-IN') %></div>
+                    <div class="kpi-label">Pending Amount</div>
+                </div>
+                <div class="kpi-icon red"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="kpi-sub neg"><i class="fas fa-exclamation-circle"></i> <%= stats.overdueTransactions || 0 %> overdue</div>
+        </div>
+
+        <div class="kpi-card blue">
+            <div class="kpi-top">
+                <div>
+                    <div class="kpi-value"><%= stats.totalTransactions || 0 %></div>
+                    <div class="kpi-label">Total Sales</div>
+                </div>
+                <div class="kpi-icon blue"><i class="fas fa-receipt"></i></div>
+            </div>
+            <div class="kpi-sub pos"><i class="fas fa-check-circle"></i> <%= stats.completedTransactions || 0 %> fully paid</div>
+        </div>
+
+        <div class="kpi-card orange">
+            <div class="kpi-top">
+                <div>
+                    <div class="kpi-value"><%= payRatio %>%</div>
+                    <div class="kpi-label">Recovery Rate</div>
+                </div>
+                <div class="kpi-icon orange"><i class="fas fa-chart-pie"></i></div>
+            </div>
+            <div class="kpi-sub"><i class="fas fa-info-circle"></i> Amount recovered</div>
+        </div>
+    </div>
+
+    <!-- Financial Overview + Sales Breakdown in one row -->
+    <div class="two-col-row">
+
+        <!-- Financial Overview -->
+        <div class="section-card">
+            <div class="section-head">
+                <div class="section-title"><i class="fas fa-chart-bar"></i> Financial Overview</div>
+                <div class="period-pills">
+                    <button class="pill active" data-filter="all-time" onclick="filterOverview(this, 'all-time')">All</button>
+                    <button class="pill" data-filter="30-days" onclick="filterOverview(this, '30-days')">30D</button>
+                    <button class="pill" data-filter="7-days" onclick="filterOverview(this, '7-days')">7D</button>
+                    <button class="pill" data-filter="24-hours" onclick="filterOverview(this, '24-hours')">24H</button>
+                </div>
+            </div>
+            <div class="fin-body" id="finBody">
+                <div class="fin-row">
+                    <div class="fin-dot" style="background:#2563eb;"></div>
+                    <div class="fin-info">
+                        <div class="fin-label">Credit Given</div>
+                        <div class="fin-bar-track">
+                            <div class="fin-bar-fill" id="barCredit" style="width:100%;background:#2563eb;"></div>
+                        </div>
+                    </div>
+                    <div class="fin-amount" id="valCredit" style="color:#2563eb;">₹<%= totalCredit.toLocaleString('en-IN') %></div>
+                </div>
+                <div class="fin-row">
+                    <div class="fin-dot" style="background:#1a6b3c;"></div>
+                    <div class="fin-info">
+                        <div class="fin-label">Amount Received</div>
+                        <div class="fin-bar-track">
+                            <div class="fin-bar-fill" id="barPaid" style="width:<%= totalCredit > 0 ? Math.round((totalPaid/totalCredit)*100) : 0 %>%;background:#1a6b3c;"></div>
+                        </div>
+                    </div>
+                    <div class="fin-amount" id="valPaid" style="color:#1a6b3c;">₹<%= totalPaid.toLocaleString('en-IN') %></div>
+                </div>
+                <div class="fin-row">
+                    <div class="fin-dot" style="background:#e74c3c;"></div>
+                    <div class="fin-info">
+                        <div class="fin-label">Still Pending</div>
+                        <div class="fin-bar-track">
+                            <div class="fin-bar-fill" id="barPending" style="width:<%= totalCredit > 0 ? Math.round((totalPending/totalCredit)*100) : 0 %>%;background:#e74c3c;"></div>
+                        </div>
+                    </div>
+                    <div class="fin-amount" id="valPending" style="color:#e74c3c;">₹<%= totalPending.toLocaleString('en-IN') %></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Breakdown -->
+        <div class="section-card">
+            <div class="section-head">
+                <div class="section-title"><i class="fas fa-list-alt"></i> Sales Breakdown</div>
+            </div>
+            <div class="tx-grid">
+                <div class="tx-box green-bg">
+                    <span class="tx-num green"><%= stats.completedTransactions || 0 %></span>
+                    <span class="tx-lbl">Fully Paid</span>
+                </div>
+                <div class="tx-box red-bg">
+                    <span class="tx-num red"><%= stats.activeTransactions || 0 %></span>
+                    <span class="tx-lbl">Pending</span>
+                </div>
+                <div class="tx-box orange-bg">
+                    <span class="tx-num orange"><%= stats.overdueTransactions || 0 %></span>
+                    <span class="tx-lbl">Overdue</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+
+<script>
+let currentFilter = 'all-time';
+
+function filterOverview(el, filter) {
+    if (currentFilter === filter) return;
+    currentFilter = filter;
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    loadOverview(filter);
+}
+
+async function loadOverview(filter) {
+    const body = document.getElementById('finBody');
+    body.style.opacity = '0.5';
+    try {
+        const res = await fetch(`/dashboard/stats?filter=${filter}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        if (!data.success) return;
+        const s = data.stats;
+        const credit = parseFloat(s.totalCreditGiven) || 0;
+        const paid = parseFloat(s.totalPaidAmount) || 0;
+        const pending = parseFloat(s.totalPendingAmount) || 0;
+        const fmt = v => '₹' + parseFloat(v || 0).toLocaleString('en-IN');
+        document.getElementById('valCredit').textContent = fmt(credit);
+        document.getElementById('valPaid').textContent = fmt(paid);
+        document.getElementById('valPending').textContent = fmt(pending);
+        document.getElementById('barCredit').style.width = '100%';
+        document.getElementById('barPaid').style.width = (credit > 0 ? Math.round((paid / credit) * 100) : 0) + '%';
+        document.getElementById('barPending').style.width = (credit > 0 ? Math.round((pending / credit) * 100) : 0) + '%';
+    } catch (e) {}
+    body.style.opacity = '1';
+}
+</script>
+</body>
+</html>

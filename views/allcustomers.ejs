@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Customers - AgriCrm</title>
+
+    <!-- Security: Prevent indexing -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
+
+    <!-- Security: Additional headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <link rel="manifest" href="/img/site.webmanifest">
+
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --success-color: #28A745;
+            --warning-color: #FFC107;
+            --danger-color: #DC3545;
+            --text-color: #111827;
+            --text-secondary: #374151;
+            --background-color: #ffffff;
+            --light-gray: #f8f9fa;
+            --border-color: #dee2e6;
+            --border-radius: 8px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--background-color);
+            padding: 0.5rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            height: 40px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+            padding-bottom: 100px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--background-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
+        }
+
+        .customers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .customers-table th {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: var(--text-color);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+        }
+
+        .customers-table td {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            vertical-align: middle;
+            background: white;
+            font-weight: 600;
+        }
+
+        .customers-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .customers-table tr:hover {
+            background-color: #e3f2fd;
+        }
+
+        .customers-table tr:hover td {
+            background-color: #e3f2fd;
+        }
+
+
+
+        /* Payment Date Styles */
+        .next-payment-date {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .payment-date {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .payment-date.overdue {
+            color: var(--danger-color);
+        }
+
+        .payment-date.today {
+            color: var(--warning-color);
+        }
+
+        .overdue-badge {
+            background: var(--danger-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .today-badge {
+            background: var(--warning-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .customer-mobile {
+            font-family: monospace;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+
+
+        .customer-location {
+            color: #333333;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+
+
+        .amount-cell {
+            font-weight: 700;
+            font-size: 1rem;
+            text-align: right;
+        }
+
+        .pending-amount {
+            color: var(--warning-color);
+        }
+
+        .paid-amount {
+            color: var(--success-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-delete {
+            border: none;
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c82333, #d63384);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .empty-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Search Filter */
+        .search-container {
+            background: var(--background-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--text-secondary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #555555;
+            transform: translateY(-1px);
+        }
+
+        /* Results Counter */
+        .results-counter {
+            text-align: center;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .results-counter strong {
+            color: var(--primary-color);
+        }
+
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 0.5rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .customers-table {
+                font-size: 0.7rem;
+            }
+
+            .customers-table th,
+            .customers-table td {
+                padding: 0.3rem;
+                font-size: 0.65rem;
+            }
+
+            .customer-name {
+                font-size: 0.9rem;
+            }
+
+            .customer-mobile,
+            .customer-aadhar,
+            .customer-location {
+                font-size: 0.8rem;
+            }
+
+            .amount-cell {
+                font-size: 0.8rem;
+            }
+
+            .btn-delete {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+            }
+
+            .search-input {
+                min-width: 200px;
+                font-size: 0.8rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .search-btn,
+            .clear-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .nav-item {
+                min-width: 55px;
+                padding: 3px 6px;
+            }
+
+            .nav-icon {
+                font-size: 22px;
+            }
+
+            .nav-label {
+                font-size: 10px;
+            }
+
+            .add-customer-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 1rem 0;
+                padding-bottom: 130px;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 1.3rem;
+            }
+
+            .nav-container {
+                padding: 0 0.3rem;
+            }
+
+            .nav-item {
+                padding: 0.3rem 0;
+                min-width: 60px;
+            }
+
+            .nav-icon {
+                font-size: 24px;
+                margin-bottom: 0.2rem;
+            }
+
+            .nav-label {
+                font-size: 11px;
+            }
+
+            .add-customer-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
+                margin-top: -20px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .main-content {
+                padding-bottom: 140px;
+            }
+
+            .nav-item {
+                min-width: 55px;
+            }
+
+            .nav-icon {
+                font-size: 20px;
+            }
+
+            .nav-label {
+                font-size: 9px;
+            }
+
+            .add-customer-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            /* Footer */
+            .footer {
+                background: var(--white);
+                border-top: 1px solid var(--border-color);
+                padding: 1rem 0;
+                text-align: center;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+
+            .footer a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+        }
+    </style>
+</head>
+
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'customers'}) %>
+
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-users"></i> All Customers</div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-list"></i>
+                    All Customers & Transactions
+                </h1>
+                <p class="page-subtitle">View and manage all customer transactions with complete details</p>
+            </div>
+
+            <!-- Search Filter -->
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input"
+                        placeholder="Search by customer name, mobile, or location...">
+                    <button class="search-btn" onclick="filterTable()">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <button class="clear-btn" onclick="clearSearch()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Counter -->
+            <div class="results-counter" id="resultsCounter">
+                Showing <strong id="visibleCount">0</strong> of <strong id="totalCount">0</strong> results
+            </div>
+            <span id="loadMoreText">Load More Customers</span>
+
+            <!-- Customers Table -->
+            <div class="table-container">
+                <% if (customers && customers.length> 0) { %>
+                    <table class="customers-table">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>Mobile Number</th>
+                                <th>Location</th>
+                                <th>Transaction Date</th>
+                                <th>Next Payment Date</th>
+                                <th>Total Amount</th>
+                                <th>Paid Amount</th>
+                                <th>Remaining</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% customers.forEach(function(customer) { %>
+                                <tr>
+                                    <td>
+                                        <div class="customer-name">
+                                            <%= customer.name ? customer.name.replace(/[<>]/g, '') : '' %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="customer-mobile">
+                                            <%= customer.mobile_number ? customer.mobile_number.replace(/[<>]/g, '') :
+                                                '' %>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div class="customer-location">
+                                            <%= customer.village_city ? customer.village_city.replace(/[<>]/g, '') : ''
+                                                %>, <%= customer.district ? customer.district.replace(/[<>]/g, '') : ''
+                                                    %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="transaction-date">
+                                            <% if (customer.transaction_date) { %>
+                                                <% const transactionDate=new Date(customer.transaction_date); %>
+                                                    <%= transactionDate.toLocaleDateString('en-IN') %><br>
+                                                        <small style="color: #666; font-size: 0.7rem;">
+                                                            <%= transactionDate.toLocaleTimeString('en-IN',
+                                                                {hour: '2-digit' , minute: '2-digit' , second: '2-digit'
+                                                                }) %>
+                                                        </small>
+                                                        <% } else if (customer.payment_date) { %>
+                                                            <%= new
+                                                                Date(customer.payment_date).toLocaleDateString('en-IN')
+                                                                %><br>
+                                                                <small style="color: #999; font-size: 0.7rem;">Date
+                                                                    only</small>
+                                                                <% } else { %>
+                                                                    <span style="color: #999; font-style: italic;">No
+                                                                        transactions</span>
+                                                                    <% } %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="next-payment-date">
+                                            <% if (customer.next_payment_date) { %>
+                                                <% const nextPaymentDate=new Date(customer.next_payment_date); const
+                                                    today=new Date(); const isOverdue=nextPaymentDate < today; const
+                                                    isToday=nextPaymentDate.toDateString()===today.toDateString(); %>
+                                                    <div
+                                                        class="payment-date <%= isOverdue ? 'overdue' : (isToday ? 'today' : '') %>">
+                                                        <%= nextPaymentDate.toLocaleDateString('en-IN') %>
+                                                            <% if (isOverdue) { %>
+                                                                <span class="overdue-badge">Overdue</span>
+                                                                <% } else if (isToday) { %>
+                                                                    <span class="today-badge">Today</span>
+                                                                    <% } %>
+                                                    </div>
+                                                    <% } else { %>
+                                                        <span style="color: #999; font-style: italic;">No due
+                                                            date</span>
+                                                        <% } %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="amount-cell">
+                                            ₹<%= parseFloat(customer.total_amount || 0).toFixed(2) %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="amount-cell paid-amount">
+                                            ₹<%= parseFloat(customer.paid_amount || 0).toFixed(2) %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div
+                                            class="amount-cell <%= parseFloat(customer.remaining_amount || 0) > 0 ? 'pending-amount' : 'paid-amount' %>">
+                                            ₹<%= parseFloat(customer.remaining_amount || 0).toFixed(2) %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <% if (customer.transaction_id) { %>
+                                                <button class="btn-delete"
+                                                    onclick="deleteTransaction('<%= customer.transaction_id %>', '<%= customer.name %>')"
+                                                    title="Delete Transaction">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                                <% } else { %>
+                                                    <button class="btn-delete"
+                                                        onclick="deleteCustomer('<%= customer.customer_id %>', '<%= customer.name %>')"
+                                                        title="Delete Customer">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                    <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                    <% } else { %>
+                        <div class="empty-state">
+                            <div class="empty-icon">👥</div>
+                            <h2 class="empty-title">No Customers Yet</h2>
+                            <p class="empty-description">Start by adding your first customer to manage their information
+                                and transactions.</p>
+                        </div>
+                        <% } %>
+
+                            <!-- Customer Count Info -->
+                            <div style="text-align: center; margin-top: 2rem; color: #666; font-size: 0.9rem;">
+                                <% if (typeof totalTransactions !=='undefined' ) { %>
+                                    Showing <strong>
+                                        <%= customers.length %>
+                                    </strong> transactions from <strong>
+                                        <%= totalCustomers %>
+                                    </strong> customers
+                                    <br>
+                                    <small style="color: #999;">Total Transactions Available: <strong>
+                                            <%= totalTransactions %>
+                                        </strong></small>
+
+                                    <!-- Pagination Controls -->
+                                    <% if (typeof currentPage !=='undefined' && (currentPage> 1 || hasMore)) { %>
+                                        <div
+                                            style="margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                            <% if (currentPage> 1) { %>
+                                                <a href="/customers/all?page=<%= currentPage - 1 %>"
+                                                    style="padding: 0.5rem 1rem; background: #007BFF; color: white; text-decoration: none; border-radius: 4px; font-size: 0.8rem;">‹
+                                                    Previous</a>
+                                                <% } %>
+
+                                                    <span
+                                                        style="padding: 0.5rem 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Page
+                                                        <%= currentPage %></span>
+
+                                                    <% if (hasMore) { %>
+                                                        <a href="/customers/all?page=<%= currentPage + 1 %>"
+                                                            style="padding: 0.5rem 1rem; background: #007BFF; color: white; text-decoration: none; border-radius: 4px; font-size: 0.8rem;">Next
+                                                            ›</a>
+                                                        <% } %>
+                                        </div>
+                                        <% } %>
+                                            <% } else { %>
+                                                Showing <span id="currentCount">
+                                                    <%= customers.length %>
+                                                </span> of <span id="totalCount">
+                                                    <%= totalCustomers %>
+                                                </span> customers
+                                                <% } %>
+                            </div>
+            </div>
+        </div>
+    </main>
+
+
+    <script>
+        // Security: Input sanitization functions
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return '';
+            return input.replace(/[<>]/g, '').trim();
+        }
+
+        function sanitizeHTMLContent(content) {
+            if (typeof content !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = content;
+            return div.innerHTML;
+        }
+
+        function safeDisplay(content) {
+            return sanitizeHTMLContent(content || '');
+        }
+
+        function handleError(error, defaultMessage = 'An error occurred') {
+            return defaultMessage;
+        }
+
+        function deleteCustomer(customerId, customerName) {
+            const sanitizedName = safeDisplay(customerName);
+
+            Swal.fire({
+                title: 'Delete Customer Transactions?',
+                html: `Are you sure you want to delete transactions for <strong>${sanitizedName}</strong>?<br><br>
+                       <span style="color: #dc3545; font-weight: 600;">⚠️ This will permanently delete:</span><br>
+                       • All transaction records for this customer<br>
+                       • All payment history for this customer<br>
+                       • Transaction history for this customer<br><br>
+                       <span style="color: #28a745; font-weight: 600;">✅ Customer profile will remain intact!</span><br><br>
+                       <span style="color: #dc3545;">This action cannot be undone!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete Transactions',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Deleting Transactions...',
+                        text: 'Please wait while we delete the customer transactions',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(`/customers/delete-transactions/${customerId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Transactions Deleted!',
+                                    text: data.message,
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message || 'Failed to delete customer transactions',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Network Error',
+                                text: 'Failed to connect to server. Please try again.',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                }
+            });
+        }
+
+        function deleteTransaction(transactionId, customerName) {
+            const sanitizedName = safeDisplay(customerName);
+
+            Swal.fire({
+                title: 'Delete Transaction?',
+                html: `Are you sure you want to delete this transaction?<br><br>
+                        <strong>Customer:</strong> ${sanitizedName}<br><br>
+                        <span style="color: #dc3545; font-weight: 600;">⚠️ This will permanently delete this transaction!</span><br><br>
+                        <span style="color: #dc3545;">This action cannot be undone!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete Transaction',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Deleting Transaction...',
+                        text: 'Please wait while we delete the transaction',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch(`/customers/delete-transaction/${transactionId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Transaction Deleted!',
+                                    text: data.message,
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message || 'Failed to delete transaction',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Network Error',
+                                text: 'Failed to connect to server. Please try again.',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                }
+            });
+        }
+
+        // Search and filter functionality
+        function filterTable() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = sanitizeInput(searchInput?.value || '').toLowerCase();
+            const table = document.querySelector('.customers-table');
+
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                try {
+                    const customerName = (row.cells[0]?.textContent || '').toLowerCase();
+                    const mobileNumber = (row.cells[1]?.textContent || '').toLowerCase();
+                    const location = (row.cells[2]?.textContent || '').toLowerCase();
+                    const nextPaymentDate = (row.cells[4]?.textContent || '').toLowerCase();
+
+                    const matches = customerName.includes(searchTerm) ||
+                        mobileNumber.includes(searchTerm) ||
+                        location.includes(searchTerm) ||
+                        nextPaymentDate.includes(searchTerm);
+
+                    if (matches) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                } catch (error) {
+                    row.style.display = '';
+                    visibleCount++;
+                }
+            });
+
+            updateResultsCount(visibleCount, rows.length);
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterTable();
+            }
+        }
+
+        function updateResultsCount(visibleCount, totalCount) {
+            const visibleCountElement = document.getElementById('visibleCount');
+            const totalCountElement = document.getElementById('totalCount');
+
+            if (visibleCountElement && totalCountElement) {
+                visibleCountElement.textContent = visibleCount;
+                totalCountElement.textContent = totalCount;
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput && searchInput.value.trim() !== '') {
+                searchInput.style.borderColor = visibleCount > 0 ? '#28a745' : '#dc3545';
+            } else if (searchInput) {
+                searchInput.style.borderColor = '#dee2e6';
+            }
+        }
+
+        // Initialize search on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', filterTable);
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        filterTable();
+                    }
+                });
+                searchInput.focus();
+            }
+
+            filterTable();
+        });
+
+
+    </script>
+
+    <!-- Page Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <%= new Date().getFullYear() %> AgriCrm.in - Agricultural Credit Management</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

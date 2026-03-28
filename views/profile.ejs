@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Poppins', -apple-system, sans-serif; background: #f7f8fa; color: #111827; font-size: 13px; }
+
+        /* Header */
+        .header {
+            background: #fff; border-bottom: 1px solid #e5e7eb;
+            padding: 0 1.25rem; height: 52px;
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .logo { height: 32px; object-fit: contain; }
+        .hdr-logout {
+            background: #fef2f2; border: none; color: #dc2626;
+            width: 34px; height: 34px; border-radius: 7px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem; text-decoration: none;
+        }
+        .hdr-logout:hover { background: #fde8e8; }
+        .container { max-width: 680px; margin: 0 auto; padding: 0.75rem 1rem; }
+
+        /* Profile Card */
+        .profile-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 0.75rem; overflow: hidden;
+        }
+        .profile-top {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px; border-bottom: 1px solid #f3f4f6;
+        }
+        .avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            object-fit: cover; border: 2px solid #e5e7eb; flex-shrink: 0;
+        }
+        .avatar-placeholder {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, #1a6b3c, #2d9e5f);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 22px; font-weight: 700; flex-shrink: 0;
+        }
+        .profile-info h2 { font-size: 14px; font-weight: 700; margin-bottom: 2px; color: #111827; }
+        .profile-info p { font-size: 12px; color: #374151; margin-bottom: 1px; font-weight: 500; }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; margin-top: 4px;
+        }
+        .badge-primary { background: rgba(26,107,60,0.1); color: #1a6b3c; }
+
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); }
+        .stat-item {
+            padding: 12px 8px; text-align: center;
+            border-right: 1px solid #f3f4f6;
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-value { font-size: 16px; font-weight: 700; color: #1a6b3c; display: block; margin-bottom: 2px; }
+        .stat-label { font-size: 10px; color: #374151; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; }
+
+        /* Contact Section */
+        .contact-section { padding: 12px 18px; border-top: 1px solid #f3f4f6; }
+        .contact-section h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #374151; margin-bottom: 10px; font-weight: 700; }
+        .contact-item {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 8px; font-size: 12px; color: #374151;
+        }
+        .contact-item i { width: 16px; text-align: center; color: #1a6b3c; font-size: 13px; }
+
+        /* Score Card */
+        .score-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 0.75rem;
+            padding: 14px 18px;
+        }
+        .score-card h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #374151; margin-bottom: 12px; font-weight: 700; }
+        .score-display { display: flex; align-items: center; gap: 14px; }
+        .score-circle {
+            width: 60px; height: 60px; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-weight: 700; flex-shrink: 0;
+        }
+        .score-good { background: rgba(22,163,74,0.08); border: 2px solid #16a34a; color: #16a34a; }
+        .score-avg { background: rgba(217,119,6,0.08); border: 2px solid #d97706; color: #92400e; }
+        .score-low { background: rgba(220,38,38,0.08); border: 2px solid #dc2626; color: #dc2626; }
+        .score-num { font-size: 16px; line-height: 1; }
+        .score-label-small { font-size: 9px; }
+        .score-info { flex: 1; }
+        .score-bar-wrap { height: 6px; background: #f3f4f6; border-radius: 4px; margin-bottom: 6px; }
+        .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+        .score-desc { font-size: 11px; color: #374151; line-height: 1.4; font-weight: 500; }
+
+        /* Actions Card */
+        .actions-card {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 0.75rem; overflow: hidden;
+        }
+        .actions-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #374151; padding: 10px 18px 6px; font-weight: 700; }
+        .action-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 18px; border-top: 1px solid #f3f4f6;
+            text-decoration: none; color: #111827; cursor: pointer; transition: background 0.15s;
+        }
+        .action-item:hover { background: #f9fafb; }
+        .action-left { display: flex; align-items: center; gap: 10px; }
+        .action-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .action-icon.green { background: rgba(26,107,60,0.1); color: #1a6b3c; }
+        .action-icon.blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+        .action-icon.red { background: rgba(220,38,38,0.08); color: #dc2626; }
+        .action-text { font-size: 12px; font-weight: 600; }
+        .action-right { color: #9ca3af; font-size: 11px; }
+
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .stat-item:nth-child(2) { border-right: none; }
+            .stat-item:nth-child(1), .stat-item:nth-child(2) { border-bottom: 1px solid #f3f4f6; }
+        }
+    </style>
+</head>
+<body class="sidebar-layout">
+    <%- include('partials/sidebar', {active: 'settings'}) %>
+
+    <div class="page-topbar">
+        <div class="page-topbar-title"><i class="fas fa-user-circle"></i> My Profile</div>
+    </div>
+
+    <div class="container">
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-top">
+                <% if (user.shop_image) { %>
+                    <img src="<%= user.shop_image %>" alt="<%= user.shop_name %>" class="avatar">
+                <% } else { %>
+                    <div class="avatar-placeholder"><%= profileData.user.avatar %></div>
+                <% } %>
+                <div class="profile-info">
+                    <h2><%= user.shop_name %></h2>
+                    <p><i class="fas fa-user" style="margin-right:6px;"></i><%= user.owner_name %></p>
+                    <p><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i><%= user.district || 'District not set' %></p>
+                    <span class="badge badge-primary">Fertilizer Shop</span>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-value"><%= profileData.stats.totalCustomers %></span>
+                    <div class="stat-label">Customers</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">₹<%= (profileData.stats.totalCreditGiven / 1000).toFixed(0) %>K</span>
+                    <div class="stat-label">Credit Given</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value"><%= profileData.stats.pendingPayments %></span>
+                    <div class="stat-label">Overdue</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value"><%= Math.round(profileData.stats.avgCreditScore) %></span>
+                    <div class="stat-label">Avg Score</div>
+                </div>
+            </div>
+            <div class="contact-section">
+                <h3>Contact Details</h3>
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <span><%= user.owner_phone || 'Not set' %></span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <span><%= user.email || 'Not set' %></span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span><%= user.shop_address || 'Address not set' %></span>
+                </div>
+                <% if (user.pincode) { %>
+                <div class="contact-item">
+                    <i class="fas fa-map-pin"></i>
+                    <span>Pincode: <%= user.pincode %></span>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Credit Score Card -->
+        <div class="score-card">
+            <h3>Portfolio Credit Health</h3>
+            <%
+                const avgScore = Math.round(profileData.stats.avgCreditScore);
+                const scoreClass = avgScore >= 700 ? 'score-good' : (avgScore >= 500 ? 'score-avg' : 'score-low');
+                const barColor = avgScore >= 700 ? '#28A745' : (avgScore >= 500 ? '#FFC107' : '#DC3545');
+                const barPct = ((avgScore - 300) / 600 * 100).toFixed(0);
+                const scoreDesc = avgScore >= 700 ? 'Excellent repayment history across your customers.' :
+                                  avgScore >= 500 ? 'Moderate repayment. Some customers have pending dues.' :
+                                  'Low score. Several customers have outstanding balances.';
+            %>
+            <div class="score-display">
+                <div class="score-circle <%= scoreClass %>">
+                    <span class="score-num"><%= avgScore %></span>
+                    <span class="score-label-small">/ 900</span>
+                </div>
+                <div class="score-info">
+                    <div class="score-bar-wrap">
+                        <div class="score-bar-fill" style="width:<%= barPct %>%; background:<%= barColor %>;"></div>
+                    </div>
+                    <p class="score-desc"><%= scoreDesc %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="actions-card">
+            <div class="actions-title">Quick Actions</div>
+            <a href="/customers" class="action-item">
+                <div class="action-left">
+                    <div class="action-icon blue"><i class="fas fa-users"></i></div>
+                    <span class="action-text">All Customers</span>
+                </div>
+                <div class="action-right"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <a href="/report" class="action-item">
+                <div class="action-left">
+                    <div class="action-icon green"><i class="fas fa-chart-bar"></i></div>
+                    <span class="action-text">View Reports</span>
+                </div>
+                <div class="action-right"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <a href="/settings" class="action-item">
+                <div class="action-left">
+                    <div class="action-icon blue"><i class="fas fa-cog"></i></div>
+                    <span class="action-text">Settings</span>
+                </div>
+                <div class="action-right"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <div class="action-item" onclick="logout()">
+                <div class="action-left">
+                    <div class="action-icon red"><i class="fas fa-sign-out-alt"></i></div>
+                    <span class="action-text" style="color:#DC3545;">Log Out</span>
+                </div>
+                <div class="action-right"><i class="fas fa-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function logout() {
+            Swal.fire({
+                title: 'Log out?',
+                text: 'Are you sure you want to log out?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#DC3545',
+                confirmButtonText: 'Log Out',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) window.location.href = '/logout';
+            });
+        }
+    </script>
+</body>
+</html>
