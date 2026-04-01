@@ -8,8 +8,6 @@ const router = express.Router();
 // GET /api/users/dashboard-stats - Get dashboard statistics for logged-in user
 router.get('/dashboard-stats', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
-        
         // Get comprehensive dashboard statistics
         const statsQuery = `
             SELECT 
@@ -54,10 +52,9 @@ router.get('/dashboard-stats', requireAuth, async (req, res) => {
                 
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
-        const result = await pool.query(statsQuery, [userId]);
+        const result = await pool.query(statsQuery);
         const stats = result.rows[0];
 
         res.json({
@@ -108,12 +105,11 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
                 COUNT(CASE WHEN c.created_at >= CURRENT_DATE THEN 1 END) as customers_today
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
         const [userResult, countsResult] = await Promise.all([
             pool.query(userQuery, [userId]),
-            pool.query(countsQuery, [userId])
+            pool.query(countsQuery)
         ]);
 
         if (userResult.rows.length === 0) {
@@ -157,7 +153,6 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
 // GET /api/users/activity - Get recent activity
 router.get('/activity', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const limit = parseInt(req.query.limit) || 10;
 
         // Get recent transactions
@@ -174,9 +169,8 @@ router.get('/activity', requireAuth, async (req, res) => {
                 c.mobile_number as customer_phone
             FROM customer_transactions t
             JOIN customers c ON t.customer_id = c.id
-            WHERE c.created_by = $1 AND c.is_active = true
             ORDER BY t.created_at DESC
-            LIMIT $2
+            LIMIT $1
         `;
 
         // Get recent customers
@@ -186,15 +180,14 @@ router.get('/activity', requireAuth, async (req, res) => {
                 COUNT(t.id) as transaction_count
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.created_at
             ORDER BY c.created_at DESC
-            LIMIT $2
+            LIMIT $1
         `;
 
         const [transactionsResult, customersResult] = await Promise.all([
-            pool.query(transactionsQuery, [userId, limit]),
-            pool.query(customersQuery, [userId, limit])
+            pool.query(transactionsQuery, [limit]),
+            pool.query(customersQuery, [limit])
         ]);
 
         res.json({
@@ -236,12 +229,11 @@ router.get('/summary', requireAuth, async (req, res) => {
                 COUNT(CASE WHEN t.status = 'active' THEN 1 END) as active_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
         const [userResult, summaryResult] = await Promise.all([
             pool.query(userQuery, [userId]),
-            pool.query(summaryQuery, [userId])
+            pool.query(summaryQuery)
         ]);
 
         if (userResult.rows.length === 0) {

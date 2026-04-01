@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
@@ -68,10 +69,9 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
-        const result = await require('./dbconnect').query(statsQuery, [req.session.user_id]);
+        const result = await require('./dbconnect').query(statsQuery);
         const stats = result.rows[0] || {};
 
         res.render('dashboard', {
@@ -115,18 +115,17 @@ app.get('/customers', requireAuth, async (req, res) => {
         const customersQuery = `
             SELECT 
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                c.created_at, c.is_active,
+                c.created_at,
                 COUNT(t.id) as transaction_count,
                 COALESCE(SUM(t.total_amount), 0) as total_amount,
                 COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.remaining_amount ELSE 0 END), 0) as total_pending_amount
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at, c.is_active
+            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at
             ORDER BY c.created_at DESC
         `;
 
-        const result = await require('./dbconnect').query(customersQuery, [req.session.user_id]);
+        const result = await require('./dbconnect').query(customersQuery);
         const customers = result.rows;
 
         res.render('customers', { user: req.user, customers: customers });
@@ -145,7 +144,6 @@ app.get('/settings', requireAuth, async (req, res) => {
                 COUNT(t.id) as total_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
         // Get active sessions count
@@ -157,7 +155,7 @@ app.get('/settings', requireAuth, async (req, res) => {
         `;
 
         const [result, sessionResult] = await Promise.all([
-            require('./dbconnect').query(statsQuery, [req.session.user_id]),
+            require('./dbconnect').query(statsQuery),
             require('./dbconnect').query(sessionsQuery)
         ]);
 
@@ -199,7 +197,6 @@ app.get('/report', requireAuth, async (req, res) => {
                 COUNT(CASE WHEN t.remaining_amount = 0 AND t.id IS NOT NULL THEN 1 END) as clear_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
         `;
 
         // Get clear customers (customers with no pending amounts)
@@ -213,7 +210,6 @@ app.get('/report', requireAuth, async (req, res) => {
                 MAX(t.next_payment_date) as next_due_date
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
             HAVING COALESCE(SUM(t.remaining_amount), 0) = 0
             ORDER BY c.created_at DESC
@@ -231,7 +227,6 @@ app.get('/report', requireAuth, async (req, res) => {
                 MAX(t.next_payment_date) as next_due_date
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
             HAVING COALESCE(SUM(t.remaining_amount), 0) > 0
             ORDER BY c.created_at DESC
@@ -246,16 +241,15 @@ app.get('/report', requireAuth, async (req, res) => {
                 COALESCE(SUM(t.remaining_amount), 0) as remaining_amount
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
             ORDER BY c.created_at DESC
         `;
 
         const [result, clearResult, pendingResult, allResult] = await Promise.all([
-            require('./dbconnect').query(reportQuery, [req.session.user_id]),
-            require('./dbconnect').query(clearCustomersQuery, [req.session.user_id]),
-            require('./dbconnect').query(pendingCustomersQuery, [req.session.user_id]),
-            require('./dbconnect').query(allCustomersQuery, [req.session.user_id])
+            require('./dbconnect').query(reportQuery),
+            require('./dbconnect').query(clearCustomersQuery),
+            require('./dbconnect').query(pendingCustomersQuery),
+            require('./dbconnect').query(allCustomersQuery)
         ]);
 
         const data = result.rows[0] || {};
@@ -323,8 +317,12 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
-
+    console.log('=================================');
+    console.log('  AgriCRM Server - Localhost');
+    console.log('=================================');
+    console.log(`Server: http://localhost:${PORT}`);
+    console.log(`Login: http://localhost:${PORT}/login`);
+    console.log('=================================');
 });
 
 module.exports = app;

@@ -7,7 +7,6 @@ const router = express.Router();
 // GET /api/users/recent-customers - Get recent customers for search/display
 router.get('/recent-customers', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const { limit = 5 } = req.query;
 
         const query = `
@@ -23,13 +22,12 @@ router.get('/recent-customers', requireAuth, async (req, res) => {
                 COALESCE(SUM(t.remaining_amount), 0) as pending_amount
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.created_at
             ORDER BY c.created_at DESC
-            LIMIT $2
+            LIMIT $1
         `;
 
-        const result = await pool.query(query, [userId, limit]);
+        const result = await pool.query(query, [limit]);
         
         res.json({
             success: true,
@@ -48,21 +46,20 @@ router.get('/recent-customers', requireAuth, async (req, res) => {
 // GET /api/users/search-customers - Search customers by name or phone
 router.get('/search-customers', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const { query: searchQuery = '', type = 'all', limit = 10 } = req.query;
 
-        let whereClause = 'WHERE c.created_by = $1 AND c.is_active = true';
-        let queryParams = [userId];
+        let whereClause = '';
+        let queryParams = [];
 
         if (searchQuery) {
             if (type === 'name') {
-                whereClause += ' AND c.name ILIKE $2';
+                whereClause = 'WHERE c.name ILIKE $1';
                 queryParams.push(`%${searchQuery}%`);
             } else if (type === 'phone') {
-                whereClause += ' AND c.mobile_number ILIKE $2';
+                whereClause = 'WHERE c.mobile_number ILIKE $1';
                 queryParams.push(`%${searchQuery}%`);
             } else {
-                whereClause += ' AND (c.name ILIKE $2 OR c.mobile_number ILIKE $2)';
+                whereClause = 'WHERE (c.name ILIKE $1 OR c.mobile_number ILIKE $1)';
                 queryParams.push(`%${searchQuery}%`);
             }
         }
@@ -112,7 +109,6 @@ router.get('/search-customers', requireAuth, async (req, res) => {
 // GET /api/users/customer/:id - Get detailed customer information
 router.get('/customer/:id', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
         // Get customer details
@@ -121,7 +117,7 @@ router.get('/customer/:id', requireAuth, async (req, res) => {
                 id, name, mobile_number, village_city, district, state, 
                 complete_address, pincode, created_at, updated_at
             FROM customers 
-            WHERE id = $1 AND created_by = $2 AND is_active = true
+            WHERE id = $1
         `;
 
         // Get transaction summary
@@ -157,7 +153,7 @@ router.get('/customer/:id', requireAuth, async (req, res) => {
         `;
 
         const [customerResult, transactionResult, recentResult] = await Promise.all([
-            pool.query(customerQuery, [customerId, userId]),
+            pool.query(customerQuery, [customerId]),
             pool.query(transactionQuery, [customerId]),
             pool.query(recentTransactionsQuery, [customerId])
         ]);
@@ -203,22 +199,20 @@ router.get('/customer/:id', requireAuth, async (req, res) => {
 // GET /api/users/customers/statistics - Get customers statistics
 router.get('/customers/statistics', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const { filter = 'all-time' } = req.query;
 
         let dateFilter = '';
-        let params = [userId];
 
         // Apply date filter
         switch (filter) {
             case '24-hours':
-                dateFilter = 'AND c.created_at >= NOW() - INTERVAL \'24 hours\'';
+                dateFilter = 'c.created_at >= NOW() - INTERVAL \'24 hours\'';
                 break;
             case '7-days':
-                dateFilter = 'AND c.created_at >= NOW() - INTERVAL \'7 days\'';
+                dateFilter = 'c.created_at >= NOW() - INTERVAL \'7 days\'';
                 break;
             case '30-days':
-                dateFilter = 'AND c.created_at >= NOW() - INTERVAL \'30 days\'';
+                dateFilter = 'c.created_at >= NOW() - INTERVAL \'30 days\'';
                 break;
             case 'all-time':
             default:
@@ -236,10 +230,10 @@ router.get('/customers/statistics', requireAuth, async (req, res) => {
                 COALESCE(SUM(t.remaining_amount), 0) as total_pending_amount
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true ${dateFilter}
+            ${dateFilter ? 'WHERE ' + dateFilter.replace('AND ', '') : ''}
         `;
 
-        const result = await pool.query(query, params);
+        const result = await pool.query(query);
         const stats = result.rows[0];
 
         res.json({

@@ -22,7 +22,6 @@ router.get('/adcm', requireAuth, (req, res) => {
 // Display all customers with their transactions page
 router.get('/all', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
         const offset = (page - 1) * limit;
@@ -30,27 +29,25 @@ router.get('/all', requireAuth, async (req, res) => {
         const customersQuery = `
             SELECT 
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                c.created_at, c.is_active,
+                c.created_at,
                 COUNT(t.id) as transaction_count,
                 COALESCE(SUM(t.total_amount), 0) as total_amount,
                 COALESCE(SUM(t.remaining_amount), 0) as pending_amount
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            WHERE c.created_by = $1 AND c.is_active = true
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at, c.is_active
+            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at
             ORDER BY c.created_at DESC
-            LIMIT $2 OFFSET $3
+            LIMIT $1 OFFSET $2
         `;
 
         const countQuery = `
             SELECT COUNT(*) as total
-            FROM customers 
-            WHERE created_by = $1 AND is_active = true
+            FROM customers
         `;
 
         const [customersResult, countResult] = await Promise.all([
-            pool.query(customersQuery, [userId, limit, offset]),
-            pool.query(countQuery, [userId])
+            pool.query(customersQuery, [limit, offset]),
+            pool.query(countQuery)
         ]);
 
         const totalCustomers = parseInt(countResult.rows[0].total);
@@ -75,7 +72,6 @@ router.post('/add', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const userId = req.session.user_id;
 
         const {
             name,
@@ -105,8 +101,8 @@ router.post('/add', requireAuth, async (req, res) => {
 
         // Check for duplicate mobile number
         const existingCustomer = await client.query(
-            'SELECT id FROM customers WHERE mobile_number = $1 AND created_by = $2 AND is_active = true',
-            [mobile_number, userId]
+            'SELECT id FROM customers WHERE mobile_number = $1',
+            [mobile_number]
         );
 
         if (existingCustomer.rows.length > 0) {
@@ -115,11 +111,11 @@ router.post('/add', requireAuth, async (req, res) => {
 
         // Insert customer
         const customerResult = await client.query(
-            `INSERT INTO customers (name, mobile_number, village_city, district, state, complete_address, pincode, created_by, created_at, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), true)
+            `INSERT INTO customers (name, mobile_number, village_city, district, state, complete_address, pincode, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
              RETURNING id, name, mobile_number, created_at`,
             [sanitizeInput(name), mobile_number, sanitizeInput(village_city), sanitizeInput(district),
-             sanitizeInput(state), sanitizeInput(complete_address), pincode, userId]
+             sanitizeInput(state), sanitizeInput(complete_address), pincode]
         );
 
         const customer = customerResult.rows[0];
@@ -127,14 +123,28 @@ router.post('/add', requireAuth, async (req, res) => {
         // Insert transaction if provided
         if (transaction_type && total_amount) {
             const remainingAmount = parseFloat(total_amount) - parseFloat(paid_amount || 0);
+            const paidNow = parseFloat(paid_amount || 0);
 
-            await client.query(
+            const transactionResult = await client.query(
                 `INSERT INTO customer_transactions 
                  (customer_id, transaction_type, product_service, total_amount, paid_amount, remaining_amount, payment_date, next_payment_date, notes, status, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())
+                 RETURNING id`,
                 [customer.id, transaction_type, product_service, parseFloat(total_amount),
-                 parseFloat(paid_amount || 0), remainingAmount, payment_date, next_payment_date, notes]
+                 paidNow, remainingAmount, payment_date, next_payment_date, notes]
             );
+
+            const transactionId = transactionResult.rows[0].id;
+
+            // If there's an initial payment, record it in payment_logs
+            if (paidNow > 0) {
+                await client.query(
+                    `INSERT INTO payment_logs 
+                     (transaction_id, customer_id, amount, payment_date, notes, created_at)
+                     VALUES ($1, $2, $3, $4, $5, NOW())`,
+                    [transactionId, customer.id, paidNow, payment_date, 'Initial payment']
+                );
+            }
         }
 
         await client.query('COMMIT');
@@ -153,91 +163,21 @@ router.post('/add', requireAuth, async (req, res) => {
     }
 });
 
-// UPDATE customer profile
-router.put('/:id', requireAuth, async (req, res) => {
-    const client = await pool.connect();
-    try {
-        const userId = req.session.user_id;
-        const customerId = parseInt(req.params.id);
-        const {
-            name,
-            mobile_number,
-            village_city,
-            district,
-            state,
-            complete_address,
-            pincode
-        } = req.body;
-
-        // Validation
-        if (!name || !mobile_number || !village_city || !district || !state) {
-            return res.status(400).json({ error: 'Required fields are missing' });
-        }
-
-        if (!validateMobile(mobile_number)) {
-            return res.status(400).json({ error: 'Invalid mobile number' });
-        }
-
-        // Check if customer belongs to user
-        const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
-        );
-
-        if (customerCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        // Check for duplicate mobile number (excluding current customer)
-        const duplicateCheck = await client.query(
-            'SELECT id FROM customers WHERE mobile_number = $1 AND id != $2 AND created_by = $3 AND is_active = true',
-            [mobile_number, customerId, userId]
-        );
-
-        if (duplicateCheck.rows.length > 0) {
-            return res.status(400).json({ error: 'Mobile number already exists' });
-        }
-
-        // Update customer
-        const result = await client.query(
-            `UPDATE customers 
-             SET name = $1, mobile_number = $2, village_city = $3, district = $4, state = $5, 
-                 complete_address = $6, pincode = $7, updated_at = NOW()
-             WHERE id = $8 AND created_by = $9 AND is_active = true
-             RETURNING id, name, mobile_number, updated_at`,
-            [sanitizeInput(name), mobile_number, sanitizeInput(village_city), sanitizeInput(district),
-             sanitizeInput(state), sanitizeInput(complete_address), pincode, customerId, userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        res.json({
-            success: true,
-            customer: result.rows[0],
-            message: 'Customer updated successfully'
-        });
-
-    } catch (error) {
-        console.error('Error updating customer:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        client.release();
-    }
-});
+// UPDATE customer profile - DISABLED (customers cannot be edited, only transactions/payments)
+// router.put('/:id', requireAuth, async (req, res) => {
+//     ... customer update code removed for simplicity
+// });
 
 // DELETE - Delete customer and all their transactions
 router.delete('/:id', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -246,9 +186,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
         await client.query('BEGIN');
 
-        // Soft delete customer (mark as inactive)
+        // Delete customer (hard delete)
         await client.query(
-            'UPDATE customers SET is_active = false, updated_at = NOW() WHERE id = $1',
+            'DELETE FROM customers WHERE id = $1',
             [customerId]
         );
 
@@ -267,19 +207,17 @@ router.delete('/:id', requireAuth, async (req, res) => {
 // Search customers by name or phone
 router.get('/search/:value', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const searchValue = sanitizeInput(req.params.value);
 
         const query = `
             SELECT id, name, mobile_number, village_city, district, state, created_at
             FROM customers 
-            WHERE created_by = $1 AND is_active = true 
-            AND (name ILIKE $2 OR mobile_number ILIKE $3)
+            WHERE (name ILIKE $1 OR mobile_number ILIKE $2)
             ORDER BY name
             LIMIT 20
         `;
 
-        const result = await pool.query(query, [userId, `%${searchValue}%`, `%${searchValue}%`]);
+        const result = await pool.query(query, [`%${searchValue}%`, `%${searchValue}%`]);
         res.json({ success: true, customers: result.rows });
 
     } catch (error) {
@@ -291,16 +229,15 @@ router.get('/search/:value', requireAuth, async (req, res) => {
 // GET customer details
 router.get('/details/:id', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
         const query = `
             SELECT id, name, mobile_number, village_city, district, state, complete_address, pincode, created_at
             FROM customers 
-            WHERE id = $1 AND created_by = $2 AND is_active = true
+            WHERE id = $1
         `;
 
-        const result = await pool.query(query, [customerId, userId]);
+        const result = await pool.query(query, [customerId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Customer not found' });
@@ -317,16 +254,15 @@ router.get('/details/:id', requireAuth, async (req, res) => {
 // GET customer report page
 router.get('/report/:id', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
-        // Check if customer belongs to user and get all details
+        // Get customer details
         const customerCheck = await pool.query(
             `SELECT id, name, mobile_number, pincode, village_city, district, state, 
                     complete_address, created_at, updated_at 
              FROM customers 
-             WHERE id = $1 AND created_by = $2 AND is_active = true`,
-            [customerId, userId]
+             WHERE id = $1`,
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {

@@ -9,13 +9,12 @@ const router = express.Router();
 // GET customer transactions (for transaction view)
 router.get('/:id', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await pool.query(
-            'SELECT id, name, mobile_number FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id, name, mobile_number FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -52,7 +51,6 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
         const {
@@ -70,10 +68,10 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Transaction type and total amount are required' });
         }
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -81,6 +79,7 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
         }
 
         const remainingAmount = parseFloat(total_amount) - parseFloat(paid_amount || 0);
+        const paidNow = parseFloat(paid_amount || 0);
 
         const result = await client.query(
             `INSERT INTO customer_transactions 
@@ -89,8 +88,20 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())
              RETURNING id, transaction_type, total_amount, remaining_amount, created_at`,
             [customerId, transaction_type, product_service, parseFloat(total_amount),
-             parseFloat(paid_amount || 0), remainingAmount, payment_date, next_payment_date, notes]
+             paidNow, remainingAmount, payment_date, next_payment_date, notes]
         );
+
+        const transactionId = result.rows[0].id;
+
+        // If there's an initial payment, record it in payment_logs
+        if (paidNow > 0) {
+            await client.query(
+                `INSERT INTO payment_logs 
+                 (transaction_id, customer_id, amount, payment_date, notes, created_at)
+                 VALUES ($1, $2, $3, $4, $5, NOW())`,
+                [transactionId, customerId, paidNow, payment_date, 'Initial payment']
+            );
+        }
 
         await client.query('COMMIT');
         res.status(201).json({
@@ -111,13 +122,12 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
 // Get transactions for customer
 router.get('/:id/transactions', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.id);
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -145,7 +155,6 @@ router.get('/:id/transactions', requireAuth, async (req, res) => {
 router.put('/:customerId/transaction/:transactionId', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.customerId);
         const transactionId = parseInt(req.params.transactionId);
 
@@ -160,10 +169,10 @@ router.put('/:customerId/transaction/:transactionId', requireAuth, async (req, r
             status
         } = req.body;
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -205,7 +214,6 @@ router.post('/add-payment', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const userId = req.session.user_id;
         const { transaction_id, customer_id, payment_amount, payment_date, notes, rating } = req.body;
 
         // Validation
@@ -213,10 +221,10 @@ router.post('/add-payment', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Required fields are missing' });
         }
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customer_id, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customer_id]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -278,14 +286,13 @@ router.delete('/:customerId/transaction/:transactionId', requireAuth, async (req
     try {
         await client.query('BEGIN');
         
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.customerId);
         const transactionId = parseInt(req.params.transactionId);
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {
@@ -324,14 +331,13 @@ router.delete('/:customerId/transaction/:transactionId', requireAuth, async (req
 // Get payment history (logs) for a specific transaction
 router.get('/:customerId/transaction/:transactionId/payments', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
         const customerId = parseInt(req.params.customerId);
         const transactionId = parseInt(req.params.transactionId);
 
-        // Check if customer belongs to user
+        // Check if customer exists
         const customerCheck = await pool.query(
-            'SELECT id FROM customers WHERE id = $1 AND created_by = $2 AND is_active = true',
-            [customerId, userId]
+            'SELECT id FROM customers WHERE id = $1',
+            [customerId]
         );
 
         if (customerCheck.rows.length === 0) {

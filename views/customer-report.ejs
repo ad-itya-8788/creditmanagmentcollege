@@ -562,7 +562,7 @@ async function loadHistory(txId, custId) {
         }
         timeline.innerHTML = data.payments.map(p => {
             const d = new Date(p.payment_date).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
-            const amt = parseFloat(p.amount).toLocaleString('en-IN');
+            const amt = parseFloat(p.payment_amount).toLocaleString('en-IN');
             const note = p.notes ? `<div class="tl-notes">${p.notes}</div>` : '';
             return `<div class="tl-item">
                 <div class="tl-dot"></div>
