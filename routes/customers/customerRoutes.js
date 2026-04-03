@@ -163,11 +163,6 @@ router.post('/add', requireAuth, async (req, res) => {
     }
 });
 
-// UPDATE customer profile - DISABLED (customers cannot be edited, only transactions/payments)
-// router.put('/:id', requireAuth, async (req, res) => {
-//     ... customer update code removed for simplicity
-// });
-
 // DELETE - Delete customer and all their transactions
 router.delete('/:id', requireAuth, async (req, res) => {
     const client = await pool.connect();

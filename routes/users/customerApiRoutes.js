@@ -85,7 +85,7 @@ router.get('/search-customers', requireAuth, async (req, res) => {
             ${whereClause}
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at
             ORDER BY c.name
-            LIMIT $${queryParams.length + 1}
+            LIMIT ${queryParams.length + 1}
         `;
 
         queryParams.push(limit);
