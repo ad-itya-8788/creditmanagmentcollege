@@ -532,8 +532,9 @@
 
             <div id="paidNowGroup" class="form-group" style="display:none;">
                 <label>Amount Paid Now (₹)</label>
-                <input type="number" id="new_paid_now" placeholder="e.g. 1000">
+                <input type="number" id="new_paid_now" placeholder="e.g. 1000" oninput="updateAddHint()">
             </div>
+            <div id="remainingDisplay" style="display:none;"></div>
 
             <div class="form-group">
                 <label>Sale Date *</label>
@@ -710,21 +711,45 @@ function updateAddHint() {
     if (!document.getElementById('new_total').value) { hintBox.style.display = 'none'; return; }
     hintBox.style.display = 'block';
 
+    const remainingDisplay = document.getElementById('remainingDisplay');
+
     if (type === 'full_payment') {
         hintBox.className = 'hint-box hint-green';
         hintBox.innerHTML = `<b>Full Payment</b> — Customer pays ₹${total.toLocaleString('en-IN')} right now. Nothing pending.`;
-        paidGroup.style.display = 'none';
-        nextGroup.style.display = 'none';
+        paidGroup.style.display         = 'none';
+        nextGroup.style.display         = 'none';
+        remainingDisplay.style.display  = 'none';
+
     } else if (type === 'credit') {
         hintBox.className = 'hint-box hint-red';
         hintBox.innerHTML = `<b>Credit / Udhaar</b> — ₹${total.toLocaleString('en-IN')} is given on credit. Full amount pending.`;
-        paidGroup.style.display = 'none';
-        nextGroup.style.display = 'block';
+        paidGroup.style.display         = 'none';
+        nextGroup.style.display         = 'block';
+        remainingDisplay.style.display  = 'none';
+
     } else {
+        // Installment — show paid-now field and calculate remaining live
         hintBox.className = 'hint-box hint-orange';
         hintBox.innerHTML = `<b>Installment</b> — Customer pays partial now, rest later. Enter how much paid now.`;
         paidGroup.style.display = 'block';
         nextGroup.style.display = 'block';
+
+        // Calculate and show remaining amount
+        const paidNow   = parseFloat(document.getElementById('new_paid_now').value) || 0;
+        const remaining = total - paidNow;
+
+        if (total > 0 && paidNow >= 0) {
+            if (remaining <= 0) {
+                // Fully paid — show green "no pending"
+                remainingDisplay.style.cssText = 'display:block; background:#e8f5e9; border-left:3px solid #2d9e5f; border-radius:7px; padding:0.45rem 0.75rem; font-size:0.72rem; color:#1a6b3c; font-weight:600; margin-bottom:0.65rem;';
+                remainingDisplay.innerHTML = '<i class="fas fa-check-circle" style="margin-right:4px;"></i> Fully paid — no remaining amount!';
+            } else {
+                remainingDisplay.style.cssText = 'display:block; background:#fde8e8; border-left:3px solid #e74c3c; border-radius:7px; padding:0.45rem 0.75rem; font-size:0.72rem; color:#c0392b; font-weight:600; margin-bottom:0.65rem;';
+                remainingDisplay.innerHTML = `<i class="fas fa-clock" style="margin-right:4px;"></i> Remaining: <span style="font-size:0.88rem;">₹${remaining.toLocaleString('en-IN')}</span> will be pending`;
+            }
+        } else {
+            remainingDisplay.style.display = 'none';
+        }
     }
 }
 async function submitNewTx() {
