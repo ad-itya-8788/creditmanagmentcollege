@@ -239,7 +239,7 @@
         <!-- Profile Card -->
         <div class="profile-card">
             <div class="profile-header">
-                <div class="profile-avatar-wrapper" onclick="uploadShopImage()" title="Change Photo">
+                <div class="profile-avatar-wrapper">
                     <% if (user.shop_image) { %>
                         <img src="<%= user.shop_image %>" alt="<%= user.shop_name %>" class="profile-avatar">
                     <% } else { %>
@@ -282,9 +282,6 @@
 
         <!-- Action Buttons -->
         <div class="action-card">
-            <button class="action-btn edit-btn" onclick="uploadShopImage()">
-                <i class="fas fa-camera"></i> Edit Profile Photo
-            </button>
             <button class="action-btn pwd-btn" onclick="changePassword()">
                 <i class="fas fa-lock"></i> Change Password
             </button>
@@ -383,62 +380,6 @@
             });
         }
 
-        // Upload Shop Image
-        function uploadShopImage() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.style.display = 'none';
-
-            input.addEventListener('change', function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    if (file.size > 2 * 1024 * 1024) {
-                        Swal.fire('Error!', 'File size must be less than 2MB', 'error');
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    formData.append('shop_image', file);
-
-                    Swal.fire({
-                        title: 'Uploading...',
-                        text: 'Please wait while we upload your image',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-
-                    fetch('/auth/upload-image', {
-                        method: 'PUT',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                Swal.fire('Error!', data.error, 'error');
-                            } else {
-                                Swal.fire({
-                                    title: 'Success!',
-                                    text: 'Shop image updated successfully!',
-                                    icon: 'success',
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                });
-                                setTimeout(() => location.reload(), 1500);
-                            }
-                        })
-                        .catch(error => {
-                            Swal.fire('Error!', 'Failed to upload image. Please try again.', 'error');
-                        });
-                }
-            });
-
-            document.body.appendChild(input);
-            input.click();
-            document.body.removeChild(input);
-        }
 
 
 
