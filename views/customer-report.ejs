@@ -191,36 +191,79 @@
         }
 
 
-        /* Add Transaction Modal */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: flex-end; }
+        /* Add Transaction Modal — centered popup */
+        .overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 200; display: none;
+            align-items: center; justify-content: center;
+            padding: 1rem;
+        }
         .overlay.open { display: flex; }
-        @media (min-width: 768px) {
-            .overlay { left: 220px; }
-        }
-        .modal-sheet {
-            background: white; border-radius: 20px 20px 0 0; width: 100%; padding: 1.25rem 1.25rem 2rem;
+
+        .modal-popup {
+            background: white;
+            border-radius: 16px;
+            width: 100%; max-width: 420px;
             max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            animation: popIn 0.2s ease;
         }
-        .modal-handle { width: 36px; height: 4px; background: #e0e0e0; border-radius: 10px; margin: 0 auto 1rem; }
-        .modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 1.1rem; color: #1a6b3c; }
-        .modal-form .form-group { margin-bottom: 0.75rem; }
-        .modal-form label { font-size: 0.78rem; color: #111827; font-weight: 700; display: block; margin-bottom: 0.35rem; }
+        @keyframes popIn {
+            from { transform: scale(0.94); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+
+        /* Modal header bar */
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.1rem 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .modal-title {
+            font-size: 0.95rem; font-weight: 700; color: #1a6b3c;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .modal-close {
+            background: #f3f4f6; border: none; cursor: pointer;
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #6b7280; font-size: 0.8rem; flex-shrink: 0;
+        }
+        .modal-close:hover { background: #e5e7eb; color: #374151; }
+
+        /* Modal body */
+        .modal-body { padding: 0.9rem 1.1rem 1.1rem; }
+
+        .modal-form .form-group { margin-bottom: 0.65rem; }
+        .modal-form label {
+            font-size: 0.72rem; color: #374151; font-weight: 700;
+            display: block; margin-bottom: 0.28rem; letter-spacing: 0.2px;
+        }
         .modal-form input, .modal-form select, .modal-form textarea {
-            width: 100%; border: 1.5px solid #e0e0e0; border-radius: 10px;
-            padding: 0.65rem 0.9rem; font-size: 0.88rem; font-family: 'Poppins', sans-serif; outline: none;
+            width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px;
+            padding: 0.52rem 0.75rem; font-size: 0.83rem;
+            font-family: 'Poppins', sans-serif; outline: none;
+            background: #fafafa; transition: border-color 0.15s, background 0.15s;
         }
-        .modal-form input:focus, .modal-form select:focus, .modal-form textarea:focus { border-color: #2d9e5f; }
-        .modal-form textarea { resize: none; height: 56px; }
-        .hint-box { padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.76rem; margin-bottom: 0.75rem; line-height: 1.5; }
+        .modal-form input:focus, .modal-form select:focus, .modal-form textarea:focus {
+            border-color: #2d9e5f; background: #fff;
+        }
+        .modal-form textarea { resize: none; height: 48px; }
+
+        .hint-box { padding: 0.45rem 0.75rem; border-radius: 7px; font-size: 0.72rem; margin-bottom: 0.65rem; line-height: 1.5; }
         .hint-green { background: #e8f5e9; color: #1a6b3c; border-left: 3px solid #2d9e5f; }
         .hint-orange { background: #fff3e0; color: #e65100; border-left: 3px solid #f39c12; }
-        .hint-red { background: #fde8e8; color: #c0392b; border-left: 3px solid #e74c3c; }
+        .hint-red    { background: #fde8e8; color: #c0392b; border-left: 3px solid #e74c3c; }
+
         .btn-submit {
             background: linear-gradient(135deg, #1a6b3c, #2d9e5f); color: white;
-            border: none; border-radius: 10px; padding: 0.8rem;
-            font-size: 0.9rem; font-weight: 700; font-family: 'Poppins', sans-serif;
-            cursor: pointer; width: 100%; margin-top: 0.5rem;
+            border: none; border-radius: 9px; padding: 0.7rem;
+            font-size: 0.85rem; font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; width: 100%; margin-top: 0.4rem;
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
         }
+        .btn-submit:hover { opacity: 0.93; }
         .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* Toast */
@@ -451,45 +494,62 @@
 </div>
 <% }) %>
 
-<!-- Add Transaction Modal -->
+<!-- Add Transaction Modal — centered popup -->
 <div class="overlay" id="addTxOverlay" onclick="closeAddTx(event)">
-    <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-title"><i class="fas fa-plus-circle" style="margin-right:0.4rem;"></i> Add New Sale</div>
-        <div class="modal-form">
+    <div class="modal-popup">
+        <!-- Header -->
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fas fa-plus-circle"></i> Add New Sale
+            </div>
+            <button class="modal-close" onclick="document.getElementById('addTxOverlay').classList.remove('open')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form body -->
+        <div class="modal-body modal-form">
             <div class="form-group">
                 <label>Product / Service Name *</label>
                 <input type="text" id="new_product" placeholder="e.g. DAP Fertilizer 50kg">
             </div>
+
             <div class="form-group">
                 <label>Total Amount (₹) *</label>
                 <input type="number" id="new_total" placeholder="e.g. 2000" oninput="updateAddHint()">
             </div>
+
             <div class="form-group">
                 <label>Payment Type *</label>
                 <select id="new_type" onchange="updateAddHint()">
-                    <option value="full_payment">Full Payment — paid fully right now</option>
-                    <option value="credit">Credit / Udhaar — will pay later</option>
-                    <option value="installment">Installment — partial paid now, rest later</option>
+                    <option value="full_payment">Full Payment — paid right now</option>
+                    <option value="credit">Credit / Udhaar — pay later</option>
+                    <option value="installment">Installment — partial now, rest later</option>
                 </select>
             </div>
+
             <div id="addHintBox" class="hint-box hint-green" style="display:none;"></div>
+
             <div id="paidNowGroup" class="form-group" style="display:none;">
                 <label>Amount Paid Now (₹)</label>
                 <input type="number" id="new_paid_now" placeholder="e.g. 1000">
             </div>
+
             <div class="form-group">
                 <label>Sale Date *</label>
                 <input type="date" id="new_date" value="<%= new Date().toISOString().split('T')[0] %>">
             </div>
+
             <div id="nextDateGroup" class="form-group" style="display:none;">
                 <label>Expected Next Payment Date</label>
                 <input type="date" id="new_next_date">
             </div>
+
             <div class="form-group">
                 <label>Notes (optional)</label>
                 <textarea id="new_notes" placeholder="Any extra info..."></textarea>
             </div>
+
             <button class="btn-submit" id="addTxBtn" onclick="submitNewTx()">
                 <i class="fas fa-save"></i> Save Transaction
             </button>
