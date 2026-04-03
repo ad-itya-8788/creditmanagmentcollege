@@ -6,12 +6,11 @@ const { sanitizeInput } = require('./customerUtils');
 
 const router = express.Router();
 
-// GET customer transactions (for transaction view)
+// GET customer transactions view
 router.get('/:id', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);
 
-        // Check if customer exists
         const customerCheck = await pool.query(
             'SELECT id, name, mobile_number FROM customers WHERE id = $1',
             [customerId]
@@ -23,16 +22,19 @@ router.get('/:id', requireAuth, async (req, res) => {
 
         const customer = customerCheck.rows[0];
 
-        // Get transactions
-        const transactionsQuery = `
-            SELECT id, transaction_type, product_service, total_amount, paid_amount, remaining_amount,
-                   payment_date, next_payment_date, notes, status, created_at
-            FROM customer_transactions 
-            WHERE customer_id = $1 
-            ORDER BY created_at DESC
-        `;
-
-        const transactionsResult = await pool.query(transactionsQuery, [customerId]);
+        const transactionsResult = await pool.query(
+            `SELECT
+                t.id, t.transaction_type, t.product_service, t.total_amount,
+                t.payment_date, t.next_payment_date, t.notes, t.status, t.created_at,
+                COALESCE(SUM(p.amount), 0) AS paid_amount,
+                t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining_amount
+             FROM customer_transactions t
+             LEFT JOIN payment_logs p ON p.transaction_id = t.id
+             WHERE t.customer_id = $1
+             GROUP BY t.id
+             ORDER BY t.created_at DESC`,
+            [customerId]
+        );
 
         res.render('customer-transactions', {
             user: req.user,
@@ -63,12 +65,10 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
             notes
         } = req.body;
 
-        // Validation
         if (!transaction_type || !total_amount) {
             return res.status(400).json({ error: 'Transaction type and total amount are required' });
         }
 
-        // Check if customer exists
         const customerCheck = await client.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -78,28 +78,27 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const remainingAmount = parseFloat(total_amount) - parseFloat(paid_amount || 0);
         const paidNow = parseFloat(paid_amount || 0);
+        const totalAmt = parseFloat(total_amount);
+        const initialStatus = paidNow >= totalAmt ? 'completed' : 'active';
 
         const result = await client.query(
-            `INSERT INTO customer_transactions 
-             (customer_id, transaction_type, product_service, total_amount, paid_amount, remaining_amount, 
+            `INSERT INTO customer_transactions
+             (customer_id, transaction_type, product_service, total_amount,
               payment_date, next_payment_date, notes, status, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())
-             RETURNING id, transaction_type, total_amount, remaining_amount, created_at`,
-            [customerId, transaction_type, product_service, parseFloat(total_amount),
-             paidNow, remainingAmount, payment_date, next_payment_date, notes]
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+             RETURNING id, transaction_type, total_amount, created_at`,
+            [customerId, transaction_type, product_service, totalAmt,
+             payment_date, next_payment_date, notes, initialStatus]
         );
 
         const transactionId = result.rows[0].id;
 
-        // If there's an initial payment, record it in payment_logs
         if (paidNow > 0) {
             await client.query(
-                `INSERT INTO payment_logs 
-                 (transaction_id, customer_id, amount, payment_date, notes, created_at)
-                 VALUES ($1, $2, $3, $4, $5, NOW())`,
-                [transactionId, customerId, paidNow, payment_date, 'Initial payment']
+                `INSERT INTO payment_logs (transaction_id, amount, payment_date, notes, created_at)
+                 VALUES ($1, $2, $3, $4, NOW())`,
+                [transactionId, paidNow, payment_date, 'Initial payment']
             );
         }
 
@@ -119,12 +118,11 @@ router.post('/:id/transaction', requireAuth, async (req, res) => {
     }
 });
 
-// Get transactions for customer
+// Get transactions for customer (API)
 router.get('/:id/transactions', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);
 
-        // Check if customer exists
         const customerCheck = await pool.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -134,15 +132,20 @@ router.get('/:id/transactions', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const query = `
-            SELECT id, transaction_type, product_service, total_amount, paid_amount, remaining_amount,
-                   payment_date, next_payment_date, notes, status, created_at
-            FROM customer_transactions 
-            WHERE customer_id = $1 
-            ORDER BY created_at DESC
-        `;
+        const result = await pool.query(
+            `SELECT
+                t.id, t.transaction_type, t.product_service, t.total_amount,
+                t.payment_date, t.next_payment_date, t.notes, t.status, t.created_at,
+                COALESCE(SUM(p.amount), 0) AS paid_amount,
+                t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining_amount
+             FROM customer_transactions t
+             LEFT JOIN payment_logs p ON p.transaction_id = t.id
+             WHERE t.customer_id = $1
+             GROUP BY t.id
+             ORDER BY t.created_at DESC`,
+            [customerId]
+        );
 
-        const result = await pool.query(query, [customerId]);
         res.json({ success: true, transactions: result.rows });
 
     } catch (error) {
@@ -151,7 +154,7 @@ router.get('/:id/transactions', requireAuth, async (req, res) => {
     }
 });
 
-// Update transaction
+// Update transaction metadata (type, product, dates, notes)
 router.put('/:customerId/transaction/:transactionId', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
@@ -162,14 +165,12 @@ router.put('/:customerId/transaction/:transactionId', requireAuth, async (req, r
             transaction_type,
             product_service,
             total_amount,
-            paid_amount,
             payment_date,
             next_payment_date,
             notes,
             status
         } = req.body;
 
-        // Check if customer exists
         const customerCheck = await pool.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -179,16 +180,15 @@ router.put('/:customerId/transaction/:transactionId', requireAuth, async (req, r
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const remainingAmount = parseFloat(total_amount) - parseFloat(paid_amount || 0);
-
         const result = await client.query(
-            `UPDATE customer_transactions 
-             SET transaction_type = $1, product_service = $2, total_amount = $3, paid_amount = $4, 
-                 remaining_amount = $5, payment_date = $6, next_payment_date = $7, notes = $8, status = $9
-             WHERE id = $10 AND customer_id = $11
-             RETURNING id, transaction_type, total_amount, remaining_amount, updated_at`,
-            [transaction_type, product_service, parseFloat(total_amount), parseFloat(paid_amount || 0),
-             remainingAmount, payment_date, next_payment_date, notes, status, transactionId, customerId]
+            `UPDATE customer_transactions
+             SET transaction_type = $1, product_service = $2, total_amount = $3,
+                 payment_date = $4, next_payment_date = $5, notes = $6, status = $7,
+                 updated_at = NOW()
+             WHERE id = $8 AND customer_id = $9
+             RETURNING id, transaction_type, total_amount, updated_at`,
+            [transaction_type, product_service, parseFloat(total_amount),
+             payment_date, next_payment_date, notes, status, transactionId, customerId]
         );
 
         if (result.rows.length === 0) {
@@ -216,24 +216,18 @@ router.post('/add-payment', requireAuth, async (req, res) => {
         await client.query('BEGIN');
         const { transaction_id, customer_id, payment_amount, payment_date, notes, rating } = req.body;
 
-        // Validation
-        if (!transaction_id || !customer_id || !payment_amount) {
-            return res.status(400).json({ error: 'Required fields are missing' });
+        if (!transaction_id || !payment_amount) {
+            return res.status(400).json({ error: 'transaction_id and payment_amount are required' });
         }
 
-        // Check if customer exists
-        const customerCheck = await client.query(
-            'SELECT id FROM customers WHERE id = $1',
-            [customer_id]
-        );
-
-        if (customerCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        // Get current transaction
+        // Verify the transaction exists and belongs to the customer
         const transactionQuery = await client.query(
-            'SELECT total_amount, paid_amount, remaining_amount FROM customer_transactions WHERE id = $1 AND customer_id = $2',
+            `SELECT t.id, t.total_amount,
+                    COALESCE(SUM(p.amount), 0) AS already_paid
+             FROM customer_transactions t
+             LEFT JOIN payment_logs p ON p.transaction_id = t.id
+             WHERE t.id = $1 AND t.customer_id = $2
+             GROUP BY t.id`,
             [transaction_id, customer_id]
         );
 
@@ -241,33 +235,29 @@ router.post('/add-payment', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Transaction not found' });
         }
 
-        const transaction = transactionQuery.rows[0];
-        const newPaidAmount = parseFloat(transaction.paid_amount) + parseFloat(payment_amount);
-        const newRemainingAmount = parseFloat(transaction.total_amount) - newPaidAmount;
+        const tx = transactionQuery.rows[0];
+        const newPaid = parseFloat(tx.already_paid) + parseFloat(payment_amount);
+        const newRemaining = parseFloat(tx.total_amount) - newPaid;
+        const newStatus = newRemaining <= 0 ? 'completed' : 'active';
 
-        const newStatus = newRemainingAmount <= 0 ? 'completed' : 'active';
-
-        // Update transaction
+        // Insert payment log
         await client.query(
-            `UPDATE customer_transactions 
-             SET paid_amount = $1, remaining_amount = $2, status = $3, updated_at = NOW()
-             WHERE id = $4 AND customer_id = $5`,
-            [newPaidAmount, newRemainingAmount, newStatus, transaction_id, customer_id]
+            `INSERT INTO payment_logs (transaction_id, amount, payment_date, notes, created_at)
+             VALUES ($1, $2, $3, $4, NOW())`,
+            [transaction_id, parseFloat(payment_amount), payment_date, notes]
         );
 
-        // Add payment record
+        // Update status on the transaction
         await client.query(
-            `INSERT INTO payment_logs 
-             (transaction_id, customer_id, amount, payment_date, notes, created_at)
-             VALUES ($1, $2, $3, $4, $5, NOW())`,
-            [transaction_id, customer_id, parseFloat(payment_amount), payment_date, notes]
+            `UPDATE customer_transactions SET status = $1, updated_at = NOW() WHERE id = $2`,
+            [newStatus, transaction_id]
         );
 
         await client.query('COMMIT');
         res.json({
             success: true,
             message: 'Payment added successfully',
-            newRemainingAmount: newRemainingAmount,
+            newRemainingAmount: newRemaining,
             newStatus: newStatus
         });
 
@@ -285,11 +275,10 @@ router.delete('/:customerId/transaction/:transactionId', requireAuth, async (req
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        
+
         const customerId = parseInt(req.params.customerId);
         const transactionId = parseInt(req.params.transactionId);
 
-        // Check if customer exists
         const customerCheck = await client.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -300,13 +289,9 @@ router.delete('/:customerId/transaction/:transactionId', requireAuth, async (req
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        // First delete related payment logs
-        await client.query(
-            'DELETE FROM payment_logs WHERE transaction_id = $1',
-            [transactionId]
-        );
+        // payment_logs cascade-deletes via FK, but we delete explicitly for safety
+        await client.query('DELETE FROM payment_logs WHERE transaction_id = $1', [transactionId]);
 
-        // Then delete the transaction
         const result = await client.query(
             'DELETE FROM customer_transactions WHERE id = $1 AND customer_id = $2 RETURNING id',
             [transactionId, customerId]
@@ -328,13 +313,12 @@ router.delete('/:customerId/transaction/:transactionId', requireAuth, async (req
     }
 });
 
-// Get payment history (logs) for a specific transaction
+// Get payment history for a specific transaction
 router.get('/:customerId/transaction/:transactionId/payments', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.customerId);
         const transactionId = parseInt(req.params.transactionId);
 
-        // Check if customer exists
         const customerCheck = await pool.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -344,14 +328,14 @@ router.get('/:customerId/transaction/:transactionId/payments', requireAuth, asyn
             return res.status(404).json({ error: 'Customer not found' });
         }
 
-        const query = `
-            SELECT id, amount as payment_amount, payment_date, notes, created_at
-            FROM payment_logs 
-            WHERE transaction_id = $1 
-            ORDER BY created_at DESC
-        `;
+        const result = await pool.query(
+            `SELECT id, amount AS payment_amount, payment_date, notes, created_at
+             FROM payment_logs
+             WHERE transaction_id = $1
+             ORDER BY created_at DESC`,
+            [transactionId]
+        );
 
-        const result = await pool.query(query, [transactionId]);
         res.json({ success: true, payments: result.rows });
 
     } catch (error) {

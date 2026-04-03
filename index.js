@@ -38,37 +38,28 @@ app.get('/signup', (req, res) => {
 // Protected routes (authentication required)
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
-        // Get comprehensive dashboard statistics
         const statsQuery = `
-            SELECT 
-                -- Customer Statistics
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(DISTINCT CASE 
-                    WHEN c.created_at >= CURRENT_DATE 
-                    THEN c.id 
-                END) as new_customers_today,
-                
-                -- Transaction Statistics
-                COUNT(t.id) as total_transactions,
-                COUNT(CASE WHEN t.status = 'active' THEN 1 END) as active_transactions,
-                COUNT(CASE WHEN t.status = 'completed' THEN 1 END) as completed_transactions,
-                COUNT(CASE WHEN t.status = 'pending' THEN 1 END) as pending_transactions,
-                
-                -- Financial Statistics
-                COALESCE(SUM(t.total_amount), 0) as total_credit_given,
-                COALESCE(SUM(t.paid_amount), 0) as total_paid_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as total_pending_amount,
-                
-                -- Overdue Transactions
-                COUNT(CASE 
-                    WHEN t.next_payment_date < CURRENT_DATE 
-                    AND t.remaining_amount > 0 
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(DISTINCT CASE WHEN c.created_at >= CURRENT_DATE THEN c.id END) AS new_customers_today,
+                COUNT(DISTINCT t.id) AS total_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'active' THEN t.id END) AS active_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) AS pending_transactions,
+                COALESCE(SUM(t.total_amount), 0) AS total_credit_given,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid_amount,
+                COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.total_amount - COALESCE(ps.paid, 0) ELSE 0 END), 0) AS total_pending_amount,
+                COUNT(DISTINCT CASE
+                    WHEN t.next_payment_date < CURRENT_DATE
+                    AND (t.total_amount - COALESCE(ps.paid, 0)) > 0
                     AND t.status = 'active'
-                    THEN 1 
-                END) as overdue_transactions
-                
+                    THEN t.id
+                END) AS overdue_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
+            LEFT JOIN (
+                SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id
+            ) ps ON ps.transaction_id = t.id
         `;
 
         const result = await require('./dbconnect').query(statsQuery);
@@ -111,17 +102,26 @@ app.get('/dashboard', requireAuth, async (req, res) => {
 
 app.get('/customers', requireAuth, async (req, res) => {
     try {
-        // Get customers with transaction data
         const customersQuery = `
-            SELECT 
-                c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                c.created_at,
-                COUNT(t.id) as transaction_count,
-                COALESCE(SUM(t.total_amount), 0) as total_amount,
-                COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.remaining_amount ELSE 0 END), 0) as total_pending_amount
+            WITH tx_payments AS (
+                SELECT
+                    t.customer_id,
+                    COUNT(t.id) AS transaction_count,
+                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
+                    COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.total_amount - COALESCE(ps.paid, 0) ELSE 0 END), 0) AS total_pending_amount
+                FROM customer_transactions t
+                LEFT JOIN (
+                    SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id
+                ) ps ON ps.transaction_id = t.id
+                GROUP BY t.customer_id
+            )
+            SELECT
+                c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at,
+                COALESCE(tp.transaction_count, 0) AS transaction_count,
+                COALESCE(tp.total_amount, 0) AS total_amount,
+                COALESCE(tp.total_pending_amount, 0) AS total_pending_amount
             FROM customers c
-            LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at
+            LEFT JOIN tx_payments tp ON tp.customer_id = c.id
             ORDER BY c.created_at DESC
         `;
 
@@ -185,63 +185,92 @@ app.get('/settings', requireAuth, async (req, res) => {
 
 app.get('/report', requireAuth, async (req, res) => {
     try {
-        // Get comprehensive report statistics
+        // Reusable payment subquery
+        const paidSub = `(SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id) ps`;
+
         const reportQuery = `
-            SELECT 
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(t.id) as total_transactions,
-                COALESCE(SUM(t.total_amount), 0) as total_credit_given,
-                COALESCE(SUM(t.paid_amount), 0) as total_paid_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as total_pending_amount,
-                COUNT(CASE WHEN t.status = 'completed' THEN 1 END) as completed_transactions,
-                COUNT(CASE WHEN t.remaining_amount = 0 AND t.id IS NOT NULL THEN 1 END) as clear_transactions
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(DISTINCT t.id) AS total_transactions,
+                COALESCE(SUM(t.total_amount), 0) AS total_credit_given,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid_amount,
+                COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS total_pending_amount,
+                COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
+                COUNT(DISTINCT CASE WHEN (t.total_amount - COALESCE(ps.paid, 0)) <= 0 AND t.id IS NOT NULL THEN t.id END) AS clear_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
+            LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
         `;
 
-        // Get clear customers (customers with no pending amounts)
         const clearCustomersQuery = `
-            SELECT 
+            WITH per_customer AS (
+                SELECT
+                    t.customer_id,
+                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount,
+                    MIN(t.payment_date) AS first_payment_date,
+                    MAX(t.next_payment_date) AS next_due_date
+                FROM customer_transactions t
+                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                GROUP BY t.customer_id
+            )
+            SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(SUM(t.total_amount), 0) as total_amount,
-                COALESCE(SUM(t.paid_amount), 0) as paid_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as remaining_amount,
-                MIN(t.payment_date) as first_payment_date,
-                MAX(t.next_payment_date) as next_due_date
+                COALESCE(pc.total_amount, 0) AS total_amount,
+                COALESCE(pc.paid_amount, 0) AS paid_amount,
+                COALESCE(pc.remaining_amount, 0) AS remaining_amount,
+                pc.first_payment_date, pc.next_due_date
             FROM customers c
-            LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
-            HAVING COALESCE(SUM(t.remaining_amount), 0) = 0
+            JOIN per_customer pc ON pc.customer_id = c.id
+            WHERE pc.remaining_amount = 0
             ORDER BY c.created_at DESC
         `;
 
-        // Get pending customers (customers with pending amounts)
         const pendingCustomersQuery = `
-            SELECT 
+            WITH per_customer AS (
+                SELECT
+                    t.customer_id,
+                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount,
+                    MIN(t.payment_date) AS first_payment_date,
+                    MAX(t.next_payment_date) AS next_due_date
+                FROM customer_transactions t
+                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                GROUP BY t.customer_id
+            )
+            SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(SUM(t.total_amount), 0) as total_amount,
-                COALESCE(SUM(t.paid_amount), 0) as paid_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as remaining_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as pending_amount,
-                MIN(t.payment_date) as first_payment_date,
-                MAX(t.next_payment_date) as next_due_date
+                COALESCE(pc.total_amount, 0) AS total_amount,
+                COALESCE(pc.paid_amount, 0) AS paid_amount,
+                COALESCE(pc.remaining_amount, 0) AS remaining_amount,
+                COALESCE(pc.remaining_amount, 0) AS pending_amount,
+                pc.first_payment_date, pc.next_due_date
             FROM customers c
-            LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
-            HAVING COALESCE(SUM(t.remaining_amount), 0) > 0
+            JOIN per_customer pc ON pc.customer_id = c.id
+            WHERE pc.remaining_amount > 0
             ORDER BY c.created_at DESC
         `;
 
-        // Get all customers
         const allCustomersQuery = `
-            SELECT 
+            WITH per_customer AS (
+                SELECT
+                    t.customer_id,
+                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount
+                FROM customer_transactions t
+                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                GROUP BY t.customer_id
+            )
+            SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(SUM(t.total_amount), 0) as total_amount,
-                COALESCE(SUM(t.paid_amount), 0) as paid_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as remaining_amount
+                COALESCE(pc.total_amount, 0) AS total_amount,
+                COALESCE(pc.paid_amount, 0) AS paid_amount,
+                COALESCE(pc.remaining_amount, 0) AS remaining_amount
             FROM customers c
-            LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state
+            LEFT JOIN per_customer pc ON pc.customer_id = c.id
             ORDER BY c.created_at DESC
         `;
 

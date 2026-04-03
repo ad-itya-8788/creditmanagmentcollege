@@ -242,13 +242,8 @@
     const CUSTOMER_ID = customer.id;
     const totalAmt = parseFloat(stats.total_amount) || 0;
     const totalPaid = parseFloat(stats.total_paid) || 0;
-    const totalPending = parseFloat(stats.total_pending_amount) || 0;
-    const score = stats.cibil_score || 500;
-    const scoreColor = score >= 750 ? '#1a6b3c' : score >= 600 ? '#2d9e5f' : score >= 450 ? '#f39c12' : '#e74c3c';
-    const scoreLabel = score >= 750 ? 'Excellent' : score >= 600 ? 'Good' : score >= 450 ? 'Average' : 'Poor';
-    const scorePct = Math.round(((score - 300) / 600) * 100);
+    const totalPending = parseFloat(stats.total_pending) || 0;
 
-    // Count overdue transactions
     const now = new Date();
     const overdueCount = transactions.filter(tx => {
         if (tx.status === 'completed') return false;

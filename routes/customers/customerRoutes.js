@@ -27,23 +27,33 @@ router.get('/all', requireAuth, async (req, res) => {
         const offset = (page - 1) * limit;
 
         const customersQuery = `
-            SELECT 
-                c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                c.created_at,
-                COUNT(t.id) as transaction_count,
-                COALESCE(SUM(t.total_amount), 0) as total_amount,
-                COALESCE(SUM(t.remaining_amount), 0) as pending_amount
+            WITH tx_summary AS (
+                SELECT
+                    t.customer_id,
+                    COUNT(t.id) AS transaction_count,
+                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS pending_amount
+                FROM customer_transactions t
+                LEFT JOIN (
+                    SELECT transaction_id, SUM(amount) AS paid
+                    FROM payment_logs
+                    GROUP BY transaction_id
+                ) ps ON ps.transaction_id = t.id
+                GROUP BY t.customer_id
+            )
+            SELECT
+                c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at,
+                COALESCE(ts.transaction_count, 0) AS transaction_count,
+                COALESCE(ts.total_amount, 0) AS total_amount,
+                COALESCE(ts.pending_amount, 0) AS pending_amount
             FROM customers c
-            LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at
+            LEFT JOIN tx_summary ts ON ts.customer_id = c.id
             ORDER BY c.created_at DESC
             LIMIT $1 OFFSET $2
         `;
 
-        const countQuery = `
-            SELECT COUNT(*) as total
-            FROM customers
-        `;
+        const countQuery = `SELECT COUNT(*) AS total FROM customers`;
 
         const [customersResult, countResult] = await Promise.all([
             pool.query(customersQuery, [limit, offset]),
@@ -90,7 +100,6 @@ router.post('/add', requireAuth, async (req, res) => {
             notes
         } = req.body;
 
-        // Validation
         if (!name || !mobile_number || !village_city || !district || !state) {
             return res.status(400).json({ error: 'Required fields are missing' });
         }
@@ -99,7 +108,6 @@ router.post('/add', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Invalid mobile number' });
         }
 
-        // Check for duplicate mobile number
         const existingCustomer = await client.query(
             'SELECT id FROM customers WHERE mobile_number = $1',
             [mobile_number]
@@ -109,7 +117,6 @@ router.post('/add', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Mobile number already exists' });
         }
 
-        // Insert customer
         const customerResult = await client.query(
             `INSERT INTO customers (name, mobile_number, village_city, district, state, complete_address, pincode, created_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
@@ -120,29 +127,27 @@ router.post('/add', requireAuth, async (req, res) => {
 
         const customer = customerResult.rows[0];
 
-        // Insert transaction if provided
         if (transaction_type && total_amount) {
-            const remainingAmount = parseFloat(total_amount) - parseFloat(paid_amount || 0);
             const paidNow = parseFloat(paid_amount || 0);
+            const totalAmt = parseFloat(total_amount);
+            const initialStatus = paidNow >= totalAmt ? 'completed' : 'active';
 
             const transactionResult = await client.query(
-                `INSERT INTO customer_transactions 
-                 (customer_id, transaction_type, product_service, total_amount, paid_amount, remaining_amount, payment_date, next_payment_date, notes, status, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())
+                `INSERT INTO customer_transactions
+                 (customer_id, transaction_type, product_service, total_amount, payment_date, next_payment_date, notes, status, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
                  RETURNING id`,
-                [customer.id, transaction_type, product_service, parseFloat(total_amount),
-                 paidNow, remainingAmount, payment_date, next_payment_date, notes]
+                [customer.id, transaction_type, product_service, totalAmt,
+                 payment_date, next_payment_date, notes, initialStatus]
             );
 
             const transactionId = transactionResult.rows[0].id;
 
-            // If there's an initial payment, record it in payment_logs
             if (paidNow > 0) {
                 await client.query(
-                    `INSERT INTO payment_logs 
-                     (transaction_id, customer_id, amount, payment_date, notes, created_at)
-                     VALUES ($1, $2, $3, $4, $5, NOW())`,
-                    [transactionId, customer.id, paidNow, payment_date, 'Initial payment']
+                    `INSERT INTO payment_logs (transaction_id, amount, payment_date, notes, created_at)
+                     VALUES ($1, $2, $3, $4, NOW())`,
+                    [transactionId, paidNow, payment_date, 'Initial payment']
                 );
             }
         }
@@ -169,7 +174,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);
 
-        // Check if customer exists
         const customerCheck = await client.query(
             'SELECT id FROM customers WHERE id = $1',
             [customerId]
@@ -180,13 +184,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
         }
 
         await client.query('BEGIN');
-
-        // Delete customer (hard delete)
-        await client.query(
-            'DELETE FROM customers WHERE id = $1',
-            [customerId]
-        );
-
+        await client.query('DELETE FROM customers WHERE id = $1', [customerId]);
         await client.query('COMMIT');
         res.json({ success: true, message: 'Customer deleted successfully' });
 
@@ -206,7 +204,7 @@ router.get('/search/:value', requireAuth, async (req, res) => {
 
         const query = `
             SELECT id, name, mobile_number, village_city, district, state, created_at
-            FROM customers 
+            FROM customers
             WHERE (name ILIKE $1 OR mobile_number ILIKE $2)
             ORDER BY name
             LIMIT 20
@@ -226,13 +224,11 @@ router.get('/details/:id', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);
 
-        const query = `
-            SELECT id, name, mobile_number, village_city, district, state, complete_address, pincode, created_at
-            FROM customers 
-            WHERE id = $1
-        `;
-
-        const result = await pool.query(query, [customerId]);
+        const result = await pool.query(
+            `SELECT id, name, mobile_number, village_city, district, state, complete_address, pincode, created_at
+             FROM customers WHERE id = $1`,
+            [customerId]
+        );
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Customer not found' });
@@ -251,12 +247,10 @@ router.get('/report/:id', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);
 
-        // Get customer details
         const customerCheck = await pool.query(
-            `SELECT id, name, mobile_number, pincode, village_city, district, state, 
-                    complete_address, created_at, updated_at 
-             FROM customers 
-             WHERE id = $1`,
+            `SELECT id, name, mobile_number, pincode, village_city, district, state,
+                    complete_address, created_at, updated_at
+             FROM customers WHERE id = $1`,
             [customerId]
         );
 
@@ -266,31 +260,40 @@ router.get('/report/:id', requireAuth, async (req, res) => {
 
         const customer = customerCheck.rows[0];
 
-        // Get all transactions for this customer
-        const transactionsQuery = `
-            SELECT 
-                id, transaction_type, product_service, total_amount, paid_amount, remaining_amount,
-                payment_date, next_payment_date, notes, status, created_at
-            FROM customer_transactions 
-            WHERE customer_id = $1 
-            ORDER BY created_at DESC
-        `;
+        // Fetch transactions with paid/remaining computed from payment_logs
+        const transactionsResult = await pool.query(
+            `SELECT
+                t.id, t.transaction_type, t.product_service, t.total_amount,
+                t.payment_date, t.next_payment_date, t.notes, t.status, t.created_at,
+                COALESCE(SUM(p.amount), 0) AS paid_amount,
+                t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining_amount
+             FROM customer_transactions t
+             LEFT JOIN payment_logs p ON p.transaction_id = t.id
+             WHERE t.customer_id = $1
+             GROUP BY t.id
+             ORDER BY t.created_at DESC`,
+            [customerId]
+        );
 
-        const transactionsResult = await pool.query(transactionsQuery, [customerId]);
+        const transactions = transactionsResult.rows;
 
-        // Calculate summary statistics
+        const totalAmount = transactions.reduce((s, t) => s + parseFloat(t.total_amount || 0), 0);
+        const totalPaid   = transactions.reduce((s, t) => s + parseFloat(t.paid_amount || 0), 0);
+        const totalPending = transactions.reduce((s, t) => s + parseFloat(t.remaining_amount || 0), 0);
+
         const stats = {
-            total_amount: transactionsResult.rows.reduce((sum, t) => sum + parseFloat(t.total_amount || 0), 0),
-            total_paid: transactionsResult.rows.reduce((sum, t) => sum + parseFloat(t.paid_amount || 0), 0),
-            total_pending: transactionsResult.rows.reduce((sum, t) => sum + parseFloat(t.remaining_amount || 0), 0),
-            completed_transactions: transactionsResult.rows.filter(t => t.status === 'completed').length,
-            active_transactions: transactionsResult.rows.filter(t => t.status === 'active').length
+            total_amount: totalAmount,
+            total_paid: totalPaid,
+            total_pending: totalPending,
+            total_transactions: transactions.length,
+            completed_transactions: transactions.filter(t => t.status === 'completed').length,
+            active_transactions: transactions.filter(t => t.status === 'active').length
         };
 
         res.render('customer-report', {
             user: req.user,
             customer: customer,
-            transactions: transactionsResult.rows,
+            transactions: transactions,
             stats: stats
         });
 

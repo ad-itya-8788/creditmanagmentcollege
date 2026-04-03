@@ -1,0 +1,93 @@
+I have a PostgreSQL database for a credit/udhaar management system. I want to refactor and clean the schema and backend logic to follow best practices.
+
+### Current Issues:
+
+1. The `payment_logs` table contains both `transaction_id` and `customer_id`, which creates redundant data and possible inconsistency.
+2. The `customer_transactions` table stores `paid_amount` and `remaining_amount`, which are derived values and may become inconsistent.
+
+---
+
+### Required Changes:
+
+#### 1. Database Schema Changes
+
+* Remove `customer_id` from `payment_logs`
+* Keep only `transaction_id` as foreign key
+* Remove (or stop using) `paid_amount` and `remaining_amount` from `customer_transactions`
+* Ensure proper foreign key constraints:
+
+  * `customer_transactions.customer_id → customers.id`
+  * `payment_logs.transaction_id → customer_transactions.id`
+
+---
+
+#### 2. Updated Data Flow
+
+* A customer has many transactions
+* A transaction has many payment logs
+* Payments should be tracked only in `payment_logs`
+
+---
+
+#### 3. Backend Logic Changes (IMPORTANT)
+
+Update all queries and APIs accordingly:
+
+##### ➤ Add Transaction
+
+* Insert into `customer_transactions` with `total_amount`
+
+##### ➤ Add Payment
+
+* Insert into `payment_logs (transaction_id, amount, payment_date, notes)`
+
+##### ➤ Get Paid Amount
+
+```sql
+SELECT COALESCE(SUM(amount), 0) AS paid
+FROM payment_logs
+WHERE transaction_id = $1;
+```
+
+##### ➤ Get Remaining Amount
+
+```sql
+SELECT 
+  t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining
+FROM customer_transactions t
+LEFT JOIN payment_logs p ON t.id = p.transaction_id
+WHERE t.id = $1
+GROUP BY t.total_amount;
+```
+
+##### ➤ Get Full Transaction Summary
+
+```sql
+SELECT 
+  t.id,
+  t.total_amount,
+  COALESCE(SUM(p.amount), 0) AS paid,
+  t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining
+FROM customer_transactions t
+LEFT JOIN payment_logs p ON t.id = p.transaction_id
+GROUP BY t.id;
+```
+
+---
+
+#### 4. Goal
+
+* Remove redundancy
+* Ensure data consistency
+* Support multiple partial payments (EMI style)
+* Make system scalable and clean
+
+---
+
+Please update:
+
+1. SQL schema (ALTER statements if needed)
+2. Backend queries (Node.js / Express style preferred)
+3. Any API changes required
+
+Keep the solution simple, clean, and production-ready.

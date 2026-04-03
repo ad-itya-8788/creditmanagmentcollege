@@ -5,53 +5,46 @@ const { requireAuth } = require('../auth');
 
 const router = express.Router();
 
-// GET /api/users/dashboard-stats - Get dashboard statistics for logged-in user
+// Reusable payment subquery
+const paymentSubquery = `(
+    SELECT transaction_id, SUM(amount) AS paid
+    FROM payment_logs
+    GROUP BY transaction_id
+) ps`;
+
+// GET /api/users/dashboard-stats
 router.get('/dashboard-stats', requireAuth, async (req, res) => {
     try {
-        // Get comprehensive dashboard statistics
         const statsQuery = `
-            SELECT 
-                -- Customer Statistics
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(DISTINCT CASE 
-                    WHEN c.created_at >= CURRENT_DATE 
-                    THEN c.id 
-                END) as new_customers_today,
-                
-                -- Transaction Statistics
-                COUNT(t.id) as total_transactions,
-                COUNT(CASE WHEN t.status = 'active' THEN 1 END) as active_transactions,
-                COUNT(CASE WHEN t.status = 'completed' THEN 1 END) as completed_transactions,
-                COUNT(CASE WHEN t.status = 'pending' THEN 1 END) as pending_transactions,
-                
-                -- Financial Statistics
-                COALESCE(SUM(t.total_amount), 0) as total_credit_given,
-                COALESCE(SUM(t.paid_amount), 0) as total_paid_amount,
-                COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.remaining_amount ELSE 0 END), 0) as total_pending_amount,
-                
-                -- Performance Metrics
-                CASE 
-                    WHEN COALESCE(SUM(t.total_amount), 0) > 0 
-                    THEN ROUND((COALESCE(SUM(t.paid_amount), 0)::DECIMAL / COALESCE(SUM(t.total_amount), 0)::DECIMAL) * 100, 1)
-                    ELSE 0 
-                END as success_rate,
-                
-                CASE 
-                    WHEN COUNT(t.id) > 0 
-                    THEN ROUND((COUNT(CASE WHEN t.status = 'completed' THEN 1 END)::DECIMAL / COUNT(t.id)::DECIMAL) * 100, 1)
-                    ELSE 0 
-                END as completion_rate,
-                
-                -- Overdue Transactions
-                COUNT(CASE 
-                    WHEN t.next_payment_date < CURRENT_DATE 
-                    AND t.remaining_amount > 0 
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(DISTINCT CASE WHEN c.created_at >= CURRENT_DATE THEN c.id END) AS new_customers_today,
+                COUNT(DISTINCT t.id) AS total_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'active' THEN t.id END) AS active_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) AS pending_transactions,
+                COALESCE(SUM(t.total_amount), 0) AS total_credit_given,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid_amount,
+                COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.total_amount - COALESCE(ps.paid, 0) ELSE 0 END), 0) AS total_pending_amount,
+                CASE
+                    WHEN COALESCE(SUM(t.total_amount), 0) > 0
+                    THEN ROUND((COALESCE(SUM(COALESCE(ps.paid, 0)), 0)::DECIMAL / COALESCE(SUM(t.total_amount), 0)::DECIMAL) * 100, 1)
+                    ELSE 0
+                END AS success_rate,
+                CASE
+                    WHEN COUNT(DISTINCT t.id) > 0
+                    THEN ROUND((COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END)::DECIMAL / COUNT(DISTINCT t.id)::DECIMAL) * 100, 1)
+                    ELSE 0
+                END AS completion_rate,
+                COUNT(DISTINCT CASE
+                    WHEN t.next_payment_date < CURRENT_DATE
+                    AND (t.total_amount - COALESCE(ps.paid, 0)) > 0
                     AND t.status = 'active'
-                    THEN 1 
-                END) as overdue_transactions
-                
+                    THEN t.id
+                END) AS overdue_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
+            LEFT JOIN ${paymentSubquery} ON ps.transaction_id = t.id
         `;
 
         const result = await pool.query(statsQuery);
@@ -77,32 +70,25 @@ router.get('/dashboard-stats', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error' 
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
-// GET /api/users/profile-stats - Get user profile statistics
+// GET /api/users/profile-stats
 router.get('/profile-stats', requireAuth, async (req, res) => {
     try {
         const userId = req.session.user_id;
 
-        // Get user basic info
         const userQuery = `
-            SELECT user_id, shop_name, owner_name, email, owner_phone, shop_address, 
-                   created_at, updated_at
-            FROM users 
-            WHERE user_id = $1
+            SELECT user_id, shop_name, owner_name, email, owner_phone, shop_address, created_at, updated_at
+            FROM users WHERE user_id = $1
         `;
 
-        // Get customer and transaction counts
         const countsQuery = `
-            SELECT 
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(t.id) as total_transactions,
-                COUNT(CASE WHEN c.created_at >= CURRENT_DATE THEN 1 END) as customers_today
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(DISTINCT t.id) AS total_transactions,
+                COUNT(CASE WHEN c.created_at >= CURRENT_DATE THEN 1 END) AS customers_today
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
         `;
@@ -113,10 +99,7 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
         ]);
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
-            });
+            return res.status(404).json({ success: false, error: 'User not found' });
         }
 
         const user = userResult.rows[0];
@@ -143,41 +126,33 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching profile stats:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error' 
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
-// GET /api/users/activity - Get recent activity
+// GET /api/users/activity
 router.get('/activity', requireAuth, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
 
-        // Get recent transactions
         const transactionsQuery = `
-            SELECT 
-                t.id,
-                t.transaction_type,
-                t.total_amount,
-                t.paid_amount,
-                t.remaining_amount,
-                t.status,
-                t.created_at,
-                c.name as customer_name,
-                c.mobile_number as customer_phone
+            SELECT
+                t.id, t.transaction_type, t.total_amount, t.status, t.created_at,
+                COALESCE(SUM(p.amount), 0) AS paid_amount,
+                t.total_amount - COALESCE(SUM(p.amount), 0) AS remaining_amount,
+                c.name AS customer_name, c.mobile_number AS customer_phone
             FROM customer_transactions t
             JOIN customers c ON t.customer_id = c.id
+            LEFT JOIN payment_logs p ON p.transaction_id = t.id
+            GROUP BY t.id, c.name, c.mobile_number
             ORDER BY t.created_at DESC
             LIMIT $1
         `;
 
-        // Get recent customers
         const customersQuery = `
-            SELECT 
-                id, name, mobile_number, village_city, created_at,
-                COUNT(t.id) as transaction_count
+            SELECT
+                c.id, c.name, c.mobile_number, c.village_city, c.created_at,
+                COUNT(t.id) AS transaction_count
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
             GROUP BY c.id, c.name, c.mobile_number, c.village_city, c.created_at
@@ -198,37 +173,32 @@ router.get('/activity', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching activity:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error' 
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
-// GET /api/users/summary - Get user summary
+// GET /api/users/summary
 router.get('/summary', requireAuth, async (req, res) => {
     try {
         const userId = req.session.user_id;
 
-        // Get user info
         const userQuery = `
             SELECT user_id, shop_name, owner_name, email, created_at
-            FROM users 
-            WHERE user_id = $1
+            FROM users WHERE user_id = $1
         `;
 
-        // Get summary statistics
         const summaryQuery = `
-            SELECT 
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(t.id) as total_transactions,
-                COALESCE(SUM(t.total_amount), 0) as total_credit,
-                COALESCE(SUM(t.paid_amount), 0) as total_paid,
-                COALESCE(SUM(t.remaining_amount), 0) as total_pending,
-                COUNT(CASE WHEN t.status = 'completed' THEN 1 END) as completed_transactions,
-                COUNT(CASE WHEN t.status = 'active' THEN 1 END) as active_transactions
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(DISTINCT t.id) AS total_transactions,
+                COALESCE(SUM(t.total_amount), 0) AS total_credit,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid,
+                COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS total_pending,
+                COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'active' THEN t.id END) AS active_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
+            LEFT JOIN ${paymentSubquery} ON ps.transaction_id = t.id
         `;
 
         const [userResult, summaryResult] = await Promise.all([
@@ -237,10 +207,7 @@ router.get('/summary', requireAuth, async (req, res) => {
         ]);
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'User not found' 
-            });
+            return res.status(404).json({ success: false, error: 'User not found' });
         }
 
         const user = userResult.rows[0];
@@ -268,10 +235,7 @@ router.get('/summary', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching user summary:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Internal server error' 
-        });
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
