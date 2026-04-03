@@ -1,54 +1,97 @@
+// Load environment variables from .env file
 require('dotenv').config();
-const express = require('express');
-const path = require('path');
 
-// Import auth routes and database
+const express = require('express');
+const path    = require('path');
+const db      = require('./dbconnect');
+
+// Import route handlers
 const { router: authRouter, sessionMiddleware, requireAuth } = require('./routes/auth');
 const customerRouter = require('./routes/customer');
-const usersRouter = require('./routes/users');
+const usersRouter    = require('./routes/users');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Set view engine
+// -------------------------------------------------------------------
+// Template engine setup (EJS)
+// -------------------------------------------------------------------
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// -------------------------------------------------------------------
 // Basic middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+// -------------------------------------------------------------------
+app.use(express.json());                                   // Parse JSON bodies
+app.use(express.urlencoded({ extended: true }));           // Parse form data
+app.use(express.static(path.join(__dirname, 'public')));   // Serve static files
+app.use(sessionMiddleware);                                // Session handling
 
-// Apply session middleware
-app.use(sessionMiddleware);
+// -------------------------------------------------------------------
+// SQL helper: sums total payments per transaction
+// Used in dashboard and report queries to compute paid/remaining
+// -------------------------------------------------------------------
+const PAID_PER_TRANSACTION = `(
+    SELECT transaction_id, SUM(amount) AS paid
+    FROM payment_logs
+    GROUP BY transaction_id
+) ps`;
 
-// Public routes (no authentication required)
+// ===================================================================
+// PUBLIC ROUTES — No login required
+// ===================================================================
+
+// Home page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Login page
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+// Signup page
 app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
-// Protected routes (authentication required)
+// ===================================================================
+// PROTECTED ROUTES — Login required (requireAuth middleware)
+// ===================================================================
+
+// -------------------------------------------------------------------
+// Dashboard page
+// Shows summary stats: customers, transactions, credit given, pending
+// -------------------------------------------------------------------
 app.get('/dashboard', requireAuth, async (req, res) => {
+    // Default stats used when the DB query fails
+    const emptyStats = {
+        totalCustomers: 0, newCustomersToday: 0,
+        totalTransactions: 0, activeTransactions: 0,
+        completedTransactions: 0, pendingTransactions: 0,
+        totalCreditGiven: 0, totalPaidAmount: 0,
+        totalPendingAmount: 0, overdueTransactions: 0
+    };
+
     try {
-        const statsQuery = `
+        const result = await db.query(`
             SELECT
                 COUNT(DISTINCT c.id) AS total_customers,
                 COUNT(DISTINCT CASE WHEN c.created_at >= CURRENT_DATE THEN c.id END) AS new_customers_today,
-                COUNT(DISTINCT t.id) AS total_transactions,
-                COUNT(DISTINCT CASE WHEN t.status = 'active' THEN t.id END) AS active_transactions,
+                COUNT(DISTINCT t.id)                               AS total_transactions,
+                COUNT(DISTINCT CASE WHEN t.status = 'active'    THEN t.id END) AS active_transactions,
                 COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
-                COUNT(DISTINCT CASE WHEN t.status = 'pending' THEN t.id END) AS pending_transactions,
-                COALESCE(SUM(t.total_amount), 0) AS total_credit_given,
-                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid_amount,
-                COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.total_amount - COALESCE(ps.paid, 0) ELSE 0 END), 0) AS total_pending_amount,
+                COUNT(DISTINCT CASE WHEN t.status = 'pending'   THEN t.id END) AS pending_transactions,
+                COALESCE(SUM(t.total_amount), 0)                               AS total_credit_given,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                         AS total_paid_amount,
+                -- Only count pending amount for active transactions
+                COALESCE(SUM(
+                    CASE WHEN t.status = 'active'
+                    THEN t.total_amount - COALESCE(ps.paid, 0)
+                    ELSE 0 END
+                ), 0) AS total_pending_amount,
+                -- Overdue: active, past due date, still has balance
                 COUNT(DISTINCT CASE
                     WHEN t.next_payment_date < CURRENT_DATE
                     AND (t.total_amount - COALESCE(ps.paid, 0)) > 0
@@ -57,123 +100,109 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 END) AS overdue_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            LEFT JOIN (
-                SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id
-            ) ps ON ps.transaction_id = t.id
-        `;
+            LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
+        `);
 
-        const result = await require('./dbconnect').query(statsQuery);
-        const stats = result.rows[0] || {};
+        const row = result.rows[0] || {};
 
         res.render('dashboard', {
             user: req.user,
             stats: {
-                totalCustomers: parseInt(stats.total_customers) || 0,
-                newCustomersToday: parseInt(stats.new_customers_today) || 0,
-                totalTransactions: parseInt(stats.total_transactions) || 0,
-                activeTransactions: parseInt(stats.active_transactions) || 0,
-                completedTransactions: parseInt(stats.completed_transactions) || 0,
-                pendingTransactions: parseInt(stats.pending_transactions) || 0,
-                totalCreditGiven: parseFloat(stats.total_credit_given) || 0,
-                totalPaidAmount: parseFloat(stats.total_paid_amount) || 0,
-                totalPendingAmount: parseFloat(stats.total_pending_amount) || 0,
-                overdueTransactions: parseInt(stats.overdue_transactions) || 0
+                totalCustomers:       parseInt(row.total_customers)        || 0,
+                newCustomersToday:    parseInt(row.new_customers_today)    || 0,
+                totalTransactions:    parseInt(row.total_transactions)     || 0,
+                activeTransactions:   parseInt(row.active_transactions)    || 0,
+                completedTransactions:parseInt(row.completed_transactions) || 0,
+                pendingTransactions:  parseInt(row.pending_transactions)   || 0,
+                totalCreditGiven:     parseFloat(row.total_credit_given)   || 0,
+                totalPaidAmount:      parseFloat(row.total_paid_amount)    || 0,
+                totalPendingAmount:   parseFloat(row.total_pending_amount) || 0,
+                overdueTransactions:  parseInt(row.overdue_transactions)   || 0
             }
         });
-    } catch (error) {
-        console.error('Dashboard error:', error);
-        res.render('dashboard', {
-            user: req.user,
-            stats: {
-                totalCustomers: 0,
-                newCustomersToday: 0,
-                totalTransactions: 0,
-                activeTransactions: 0,
-                completedTransactions: 0,
-                pendingTransactions: 0,
-                totalCreditGiven: 0,
-                totalPaidAmount: 0,
-                totalPendingAmount: 0,
-                overdueTransactions: 0
-            }
-        });
+
+    } catch (err) {
+        console.error('Dashboard error:', err);
+        res.render('dashboard', { user: req.user, stats: emptyStats });
     }
 });
 
+// -------------------------------------------------------------------
+// Customers list page
+// Shows all customers with their total credit and pending amounts
+// -------------------------------------------------------------------
 app.get('/customers', requireAuth, async (req, res) => {
     try {
-        const customersQuery = `
+        const result = await db.query(`
             WITH tx_payments AS (
                 SELECT
                     t.customer_id,
-                    COUNT(t.id) AS transaction_count,
-                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
-                    COALESCE(SUM(CASE WHEN t.status = 'active' THEN t.total_amount - COALESCE(ps.paid, 0) ELSE 0 END), 0) AS total_pending_amount
+                    COUNT(t.id)                                        AS transaction_count,
+                    COALESCE(SUM(t.total_amount), 0)                   AS total_amount,
+                    -- Only count pending from active transactions
+                    COALESCE(SUM(
+                        CASE WHEN t.status = 'active'
+                        THEN t.total_amount - COALESCE(ps.paid, 0)
+                        ELSE 0 END
+                    ), 0) AS total_pending_amount
                 FROM customer_transactions t
-                LEFT JOIN (
-                    SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id
-                ) ps ON ps.transaction_id = t.id
+                LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
                 GROUP BY t.customer_id
             )
             SELECT
-                c.id, c.name, c.mobile_number, c.village_city, c.district, c.state, c.created_at,
-                COALESCE(tp.transaction_count, 0) AS transaction_count,
-                COALESCE(tp.total_amount, 0) AS total_amount,
+                c.id, c.name, c.mobile_number, c.village_city,
+                c.district, c.state, c.created_at,
+                COALESCE(tp.transaction_count, 0)    AS transaction_count,
+                COALESCE(tp.total_amount, 0)         AS total_amount,
                 COALESCE(tp.total_pending_amount, 0) AS total_pending_amount
             FROM customers c
             LEFT JOIN tx_payments tp ON tp.customer_id = c.id
             ORDER BY c.created_at DESC
-        `;
+        `);
 
-        const result = await require('./dbconnect').query(customersQuery);
-        const customers = result.rows;
+        res.render('customers', { user: req.user, customers: result.rows });
 
-        res.render('customers', { user: req.user, customers: customers });
-    } catch (error) {
-        console.error('Customers route error:', error);
+    } catch (err) {
+        console.error('Customers page error:', err);
         res.render('customers', { user: req.user, customers: [] });
     }
 });
 
+// -------------------------------------------------------------------
+// Settings page
+// Shows the admin's account info and basic usage statistics
+// -------------------------------------------------------------------
 app.get('/settings', requireAuth, async (req, res) => {
     try {
-        // Get user's statistics
-        const statsQuery = `
-            SELECT 
-                COUNT(DISTINCT c.id) as total_customers,
-                COUNT(t.id) as total_transactions
+        // Get total customers and transactions
+        const statsResult = await db.query(`
+            SELECT
+                COUNT(DISTINCT c.id) AS total_customers,
+                COUNT(t.id)          AS total_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-        `;
+        `);
 
-        // Get active sessions count
-        const sessionsQuery = `
-            SELECT COUNT(*) as session_count
-            FROM session 
-            WHERE sess::text LIKE '%admin_id%' 
+        // Count active login sessions
+        const sessionsResult = await db.query(`
+            SELECT COUNT(*) AS session_count
+            FROM session
+            WHERE sess::text LIKE '%admin_id%'
             AND expire > NOW()
-        `;
+        `);
 
-        const [result, sessionResult] = await Promise.all([
-            require('./dbconnect').query(statsQuery),
-            require('./dbconnect').query(sessionsQuery)
-        ]);
-
-        const data = result.rows[0] || {};
-        const sessionData = sessionResult.rows[0] || {};
-
-        const customersCreatedByUser = parseInt(data.total_customers) || 0;
-        const totalTransactions = parseInt(data.total_transactions) || 0;
-        const activeSessions = parseInt(sessionData.session_count) || 1; // At least current session
+        const stats    = statsResult.rows[0]    || {};
+        const sessions = sessionsResult.rows[0] || {};
 
         res.render('settings', {
-            user: req.user,
-            customersCreatedByUser: customersCreatedByUser,
-            totalTransactions: totalTransactions,
-            activeSessions: activeSessions
+            user:                    req.user,
+            customersCreatedByUser:  parseInt(stats.total_customers)    || 0,
+            totalTransactions:       parseInt(stats.total_transactions)  || 0,
+            activeSessions:          parseInt(sessions.session_count)   || 1
         });
-    } catch (error) {
-        console.error('Settings route error:', error);
+
+    } catch (err) {
+        console.error('Settings page error:', err);
         res.render('settings', {
             user: req.user,
             customersCreatedByUser: 0,
@@ -183,174 +212,173 @@ app.get('/settings', requireAuth, async (req, res) => {
     }
 });
 
+// -------------------------------------------------------------------
+// Report page
+// Shows full credit report: totals, clear customers, and pending ones
+// -------------------------------------------------------------------
 app.get('/report', requireAuth, async (req, res) => {
-    try {
-        // Reusable payment subquery
-        const paidSub = `(SELECT transaction_id, SUM(amount) AS paid FROM payment_logs GROUP BY transaction_id) ps`;
+    // Default empty data if DB fails
+    const emptyReport = {
+        user: req.user, title: 'Report - AgriCrm',
+        totalCustomers: 0, totalTransactions: 0,
+        totalPending: 0, totalClear: 0,
+        clearCustomers: [], pendingCustomers: [], allCustomers: []
+    };
 
-        const reportQuery = `
+    try {
+        // --- Overall summary numbers ---
+        const summaryQuery = db.query(`
             SELECT
-                COUNT(DISTINCT c.id) AS total_customers,
-                COUNT(DISTINCT t.id) AS total_transactions,
-                COALESCE(SUM(t.total_amount), 0) AS total_credit_given,
-                COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS total_paid_amount,
-                COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS total_pending_amount,
+                COUNT(DISTINCT c.id)                                     AS total_customers,
+                COUNT(DISTINCT t.id)                                     AS total_transactions,
+                COALESCE(SUM(t.total_amount), 0)                         AS total_credit_given,
+                COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                   AS total_paid_amount,
+                COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0)  AS total_pending_amount,
                 COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.id END) AS completed_transactions,
-                COUNT(DISTINCT CASE WHEN (t.total_amount - COALESCE(ps.paid, 0)) <= 0 AND t.id IS NOT NULL THEN t.id END) AS clear_transactions
+                COUNT(DISTINCT CASE
+                    WHEN (t.total_amount - COALESCE(ps.paid, 0)) <= 0 AND t.id IS NOT NULL
+                    THEN t.id
+                END) AS clear_transactions
             FROM customers c
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
-            LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
-        `;
+            LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
+        `);
 
-        const clearCustomersQuery = `
+        // --- Customers with no remaining balance (fully paid) ---
+        const clearCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
                     t.customer_id,
-                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
-                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount), 0)                        AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                  AS paid_amount,
                     COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount,
-                    MIN(t.payment_date) AS first_payment_date,
+                    MIN(t.payment_date)      AS first_payment_date,
                     MAX(t.next_payment_date) AS next_due_date
                 FROM customer_transactions t
-                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
                 GROUP BY t.customer_id
             )
             SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(pc.total_amount, 0) AS total_amount,
-                COALESCE(pc.paid_amount, 0) AS paid_amount,
-                COALESCE(pc.remaining_amount, 0) AS remaining_amount,
+                pc.total_amount, pc.paid_amount, pc.remaining_amount,
                 pc.first_payment_date, pc.next_due_date
             FROM customers c
             JOIN per_customer pc ON pc.customer_id = c.id
             WHERE pc.remaining_amount = 0
             ORDER BY c.created_at DESC
-        `;
+        `);
 
-        const pendingCustomersQuery = `
+        // --- Customers with remaining balance (still pending) ---
+        const pendingCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
                     t.customer_id,
-                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
-                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount), 0)                        AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                  AS paid_amount,
                     COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount,
-                    MIN(t.payment_date) AS first_payment_date,
+                    MIN(t.payment_date)      AS first_payment_date,
                     MAX(t.next_payment_date) AS next_due_date
                 FROM customer_transactions t
-                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
                 GROUP BY t.customer_id
             )
             SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(pc.total_amount, 0) AS total_amount,
-                COALESCE(pc.paid_amount, 0) AS paid_amount,
-                COALESCE(pc.remaining_amount, 0) AS remaining_amount,
-                COALESCE(pc.remaining_amount, 0) AS pending_amount,
+                pc.total_amount, pc.paid_amount,
+                pc.remaining_amount, pc.remaining_amount AS pending_amount,
                 pc.first_payment_date, pc.next_due_date
             FROM customers c
             JOIN per_customer pc ON pc.customer_id = c.id
             WHERE pc.remaining_amount > 0
             ORDER BY c.created_at DESC
-        `;
+        `);
 
-        const allCustomersQuery = `
+        // --- All customers with their totals ---
+        const allCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
                     t.customer_id,
-                    COALESCE(SUM(t.total_amount), 0) AS total_amount,
-                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0) AS paid_amount,
+                    COALESCE(SUM(t.total_amount), 0)                        AS total_amount,
+                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                  AS paid_amount,
                     COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS remaining_amount
                 FROM customer_transactions t
-                LEFT JOIN ${paidSub} ON ps.transaction_id = t.id
+                LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
                 GROUP BY t.customer_id
             )
             SELECT
                 c.id, c.name, c.mobile_number, c.village_city, c.district, c.state,
-                COALESCE(pc.total_amount, 0) AS total_amount,
-                COALESCE(pc.paid_amount, 0) AS paid_amount,
+                COALESCE(pc.total_amount, 0)    AS total_amount,
+                COALESCE(pc.paid_amount, 0)     AS paid_amount,
                 COALESCE(pc.remaining_amount, 0) AS remaining_amount
             FROM customers c
             LEFT JOIN per_customer pc ON pc.customer_id = c.id
             ORDER BY c.created_at DESC
-        `;
+        `);
 
-        const [result, clearResult, pendingResult, allResult] = await Promise.all([
-            require('./dbconnect').query(reportQuery),
-            require('./dbconnect').query(clearCustomersQuery),
-            require('./dbconnect').query(pendingCustomersQuery),
-            require('./dbconnect').query(allCustomersQuery)
+        // Run all 4 queries at the same time for speed
+        const [summaryResult, clearResult, pendingResult, allResult] = await Promise.all([
+            summaryQuery, clearCustomersQuery, pendingCustomersQuery, allCustomersQuery
         ]);
 
-        const data = result.rows[0] || {};
-        const clearCustomers = clearResult.rows || [];
-        const pendingCustomers = pendingResult.rows || [];
-        const allCustomers = allResult.rows || [];
-
-        const totalCustomers = parseInt(data.total_customers) || 0;
-        const totalTransactions = parseInt(data.total_transactions) || 0;
-        const totalPending = parseFloat(data.total_pending_amount) || 0;
-        const totalClear = parseInt(data.clear_transactions) || 0;
+        const row = summaryResult.rows[0] || {};
 
         res.render('report', {
-            user: req.user,
-            title: 'Report - AgriCrm',
-            totalCustomers: totalCustomers,
-            totalTransactions: totalTransactions,
-            totalPending: totalPending,
-            totalClear: totalClear,
-            clearCustomers: clearCustomers,
-            pendingCustomers: pendingCustomers,
-            allCustomers: allCustomers
+            user:             req.user,
+            title:            'Report - AgriCrm',
+            totalCustomers:   parseInt(row.total_customers)    || 0,
+            totalTransactions:parseInt(row.total_transactions) || 0,
+            totalPending:     parseFloat(row.total_pending_amount) || 0,
+            totalClear:       parseInt(row.clear_transactions)  || 0,
+            clearCustomers:   clearResult.rows   || [],
+            pendingCustomers: pendingResult.rows || [],
+            allCustomers:     allResult.rows     || []
         });
-    } catch (error) {
-        console.error('Report route error:', error);
-        res.render('report', {
-            user: req.user,
-            title: 'Report - AgriCrm',
-            totalCustomers: 0,
-            totalTransactions: 0,
-            totalPending: 0,
-            totalClear: 0,
-            clearCustomers: [],
-            pendingCustomers: [],
-            allCustomers: []
-        });
+
+    } catch (err) {
+        console.error('Report page error:', err);
+        res.render('report', emptyReport);
     }
 });
 
-// Routes
-app.use('/auth', authRouter);
-app.use('/customers', customerRouter);
-app.use('/api/users', usersRouter);
+// ===================================================================
+// ROUTE MOUNTING
+// ===================================================================
+app.use('/auth',      authRouter);       // Login, register, logout
+app.use('/customers', customerRouter);   // Customer CRUD + transactions
+app.use('/api/users', usersRouter);      // Dashboard API, search, stats
 
-// Logout route
+// Logout via GET (clears session and redirects to login)
 app.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
+    req.session.destroy(() => {
         res.clearCookie('agricrm.sid');
         res.redirect('/login');
     });
 });
 
-
-
-// 404 handler
+// -------------------------------------------------------------------
+// 404 handler — shown when no route matches
+// -------------------------------------------------------------------
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-// Error handler
+// -------------------------------------------------------------------
+// Error handler — catches any unhandled errors
+// -------------------------------------------------------------------
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error('Unhandled error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
+// -------------------------------------------------------------------
+// Start the server
+// -------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
     console.log('=================================');
     console.log('  AgriCRM Server');
     console.log('=================================');
     console.log(`Server: http://0.0.0.0:${PORT}`);
-    console.log(`Login: http://0.0.0.0:${PORT}/login`);
+    console.log(`Login:  http://0.0.0.0:${PORT}/login`);
     console.log('=================================');
 });
 
