@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS customers (
     state            VARCHAR(100)    NOT NULL,
     complete_address TEXT            NOT NULL,
     is_active        BOOLEAN         DEFAULT TRUE,
-    created_by       INTEGER         REFERENCES admin (admin_id) ON DELETE SET NULL,
     created_at       TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,10 +63,7 @@ CREATE TABLE IF NOT EXISTS customer_transactions (
     status               VARCHAR(20)     DEFAULT 'active',
     payment_date         DATE            NOT NULL,
     next_payment_date    DATE,
-    rating               INTEGER,
     notes                TEXT,
-    payment_completed_at TIMESTAMP,
-    created_by           INTEGER         REFERENCES admin (admin_id) ON DELETE SET NULL,
     created_at           TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
 );
