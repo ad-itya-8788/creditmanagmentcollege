@@ -1,20 +1,11 @@
-// Load environment variables from .env file
+const{Pool}=require('pg');
 require('dotenv').config();
 
-const { Pool } = require('pg');
-
-// Create a connection pool using the DATABASE_URL from environment
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // Enable SSL only if the URL requires it (e.g., hosted Postgres)
-    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode=require')
-        ? { rejectUnauthorized: false }
-        : false
+const pool=new Pool({
+    user:process.env.DB_USER,
+    host:process.env.DB_HOST,
+    database:process.env.DB_NAME,
+    port:process.env.DB_PORT,
+    password:process.env.DB_PASSWORD,
 });
-
-// Log if the database has an unexpected error
-pool.on('error', (err) => {
-    console.error('Unexpected database error:', err);
-});
-
-module.exports = pool;
+module.exports=pool;
