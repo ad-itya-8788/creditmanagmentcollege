@@ -150,7 +150,7 @@ app.get('/settings', requireAuth, async (req, res) => {
         const sessionsQuery = `
             SELECT COUNT(*) as session_count
             FROM session 
-            WHERE sess::text LIKE '%user_id%' 
+            WHERE sess::text LIKE '%admin_id%' 
             AND expire > NOW()
         `;
 

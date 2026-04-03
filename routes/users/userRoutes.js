@@ -77,11 +77,11 @@ router.get('/dashboard-stats', requireAuth, async (req, res) => {
 // GET /api/users/profile-stats
 router.get('/profile-stats', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
+        const userId = req.session.admin_id;
 
         const userQuery = `
-            SELECT user_id, shop_name, owner_name, email, owner_phone, shop_address, created_at, updated_at
-            FROM users WHERE user_id = $1
+            SELECT admin_id, shop_name, owner_name, email, owner_phone, shop_address, created_at, updated_at
+            FROM admin WHERE admin_id = $1
         `;
 
         const countsQuery = `
@@ -108,7 +108,7 @@ router.get('/profile-stats', requireAuth, async (req, res) => {
         res.json({
             success: true,
             user: {
-                user_id: user.user_id,
+                admin_id: user.admin_id,
                 shop_name: user.shop_name,
                 owner_name: user.owner_name,
                 email: user.email,
@@ -180,11 +180,11 @@ router.get('/activity', requireAuth, async (req, res) => {
 // GET /api/users/summary
 router.get('/summary', requireAuth, async (req, res) => {
     try {
-        const userId = req.session.user_id;
+        const userId = req.session.admin_id;
 
         const userQuery = `
-            SELECT user_id, shop_name, owner_name, email, created_at
-            FROM users WHERE user_id = $1
+            SELECT admin_id, shop_name, owner_name, email, created_at
+            FROM admin WHERE admin_id = $1
         `;
 
         const summaryQuery = `
@@ -216,7 +216,7 @@ router.get('/summary', requireAuth, async (req, res) => {
         res.json({
             success: true,
             user: {
-                user_id: user.user_id,
+                admin_id: user.admin_id,
                 shop_name: user.shop_name,
                 owner_name: user.owner_name,
                 email: user.email,

@@ -9,12 +9,11 @@ const fs = require('fs');
 
 const router = express.Router();
 
-// Session configuration (simplified for localhost)
 const sessionStore = new pgSession({
     pool: pool,
     tableName: 'session',
     createTableIfMissing: true,
-    ttl: 24 * 60 * 60 // 24 hours
+    ttl: 24 * 60 * 60
 });
 
 const sessionMiddleware = session({
@@ -23,7 +22,7 @@ const sessionMiddleware = session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Not required for localhost
+        secure: false,
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax'
@@ -34,18 +33,17 @@ const sessionMiddleware = session({
 // Auth middleware
 const requireAuth = async (req, res, next) => {
     try {
-        if (req.session && req.session.user_id) {
+        if (req.session && req.session.admin_id) {
             const result = await pool.query(
-                `SELECT user_id, shop_name, owner_name, owner_phone, shop_address, 
-                        pincode, tehsil, district, email, shop_image 
-                 FROM users 
-                 WHERE user_id = $1`,
-                [req.session.user_id]
+                `SELECT admin_id, shop_name, owner_name, owner_phone, shop_address,
+                        pincode, tehsil, district, email, shop_image
+                 FROM admin
+                 WHERE admin_id = $1`,
+                [req.session.admin_id]
             );
 
             if (result.rows.length > 0) {
-                const user = result.rows[0];
-                req.user = user;
+                req.user = result.rows[0];
                 next();
             } else {
                 req.session.destroy();
@@ -60,7 +58,6 @@ const requireAuth = async (req, res, next) => {
     }
 };
 
-// Utility functions
 const sanitizeInput = (input) => {
     if (typeof input === 'string') {
         return validator.escape(validator.trim(input));
@@ -95,19 +92,10 @@ router.post('/register', async (req, res) => {
         await client.query('BEGIN');
 
         const {
-            shop_name,
-            owner_name,
-            owner_phone,
-            shop_address,
-            pincode,
-            email,
-            password,
-            confirm_password,
-            tehsil,
-            district
+            shop_name, owner_name, owner_phone, shop_address,
+            pincode, email, password, confirm_password, tehsil, district
         } = req.body;
 
-        // Sanitize inputs
         const sanitizedData = {
             shop_name: sanitizeInput(shop_name),
             owner_name: sanitizeInput(owner_name),
@@ -119,8 +107,7 @@ router.post('/register', async (req, res) => {
             district: sanitizeInput(district)
         };
 
-        // Validation
-        if (!sanitizedData.shop_name || !sanitizedData.owner_name || !sanitizedData.owner_phone || 
+        if (!sanitizedData.shop_name || !sanitizedData.owner_name || !sanitizedData.owner_phone ||
             !sanitizedData.shop_address || !sanitizedData.email || !password) {
             return res.status(400).json({ error: 'All required fields must be provided' });
         }
@@ -141,43 +128,36 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 8 characters long' });
         }
 
-        // Check existing user
         const emailCheck = await client.query(
-            'SELECT user_id FROM users WHERE email = $1',
+            'SELECT admin_id FROM admin WHERE email = $1',
             [sanitizedData.email]
         );
-
         if (emailCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
         const phoneCheck = await client.query(
-            'SELECT user_id FROM users WHERE owner_phone = $1',
+            'SELECT admin_id FROM admin WHERE owner_phone = $1',
             [sanitizedData.owner_phone]
         );
-
         if (phoneCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Phone number already registered' });
         }
 
-        // Hash password
-        const saltRounds = 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Insert user
         const result = await client.query(
-            `INSERT INTO users (shop_name, owner_name, owner_phone, shop_address, pincode, email, password, tehsil, district)
+            `INSERT INTO admin (shop_name, owner_name, owner_phone, shop_address, pincode, email, password, tehsil, district)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             RETURNING user_id, shop_name, owner_name, email`,
-            [sanitizedData.shop_name, sanitizedData.owner_name, sanitizedData.owner_phone, 
-             sanitizedData.shop_address, sanitizedData.pincode, sanitizedData.email, 
+             RETURNING admin_id, shop_name, owner_name, email`,
+            [sanitizedData.shop_name, sanitizedData.owner_name, sanitizedData.owner_phone,
+             sanitizedData.shop_address, sanitizedData.pincode, sanitizedData.email,
              hashedPassword, sanitizedData.tehsil, sanitizedData.district]
         );
 
         const user = result.rows[0];
 
-        // Create session
-        req.session.user_id = user.user_id;
+        req.session.admin_id = user.admin_id;
         req.session.shop_name = user.shop_name;
         req.session.owner_name = user.owner_name;
         req.session.email = user.email;
@@ -187,7 +167,7 @@ router.post('/register', async (req, res) => {
         res.status(201).json({
             message: 'Registration successful',
             user: {
-                user_id: user.user_id,
+                admin_id: user.admin_id,
                 shop_name: user.shop_name,
                 owner_name: user.owner_name,
                 email: user.email
@@ -214,16 +194,15 @@ router.post('/login', async (req, res) => {
 
         const sanitizedIdentifier = sanitizeInput(identifier);
 
-        // Find user
         let result;
         if (sanitizedIdentifier.includes('@')) {
             result = await pool.query(
-                'SELECT user_id, shop_name, owner_name, email, password FROM users WHERE email = $1',
+                'SELECT admin_id, shop_name, owner_name, email, password FROM admin WHERE email = $1',
                 [sanitizedIdentifier.toLowerCase()]
             );
         } else {
             result = await pool.query(
-                'SELECT user_id, shop_name, owner_name, email, password FROM users WHERE owner_phone = $1',
+                'SELECT admin_id, shop_name, owner_name, email, password FROM admin WHERE owner_phone = $1',
                 [sanitizedIdentifier]
             );
         }
@@ -237,19 +216,17 @@ router.post('/login', async (req, res) => {
         if (!user.password) {
             return res.status(401).json({ error: 'Invalid email/phone or password' });
         }
-        
-        const passwordMatch = await bcrypt.compare(password, user.password);
 
+        const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
             return res.status(401).json({ error: 'Invalid email/phone or password' });
         }
 
-        // Create session
-        req.session.user_id = user.user_id;
+        req.session.admin_id = user.admin_id;
         req.session.shop_name = user.shop_name;
         req.session.owner_name = user.owner_name;
         req.session.email = user.email;
-        
+
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error:', err);
@@ -259,7 +236,7 @@ router.post('/login', async (req, res) => {
             res.json({
                 message: 'Login successful',
                 user: {
-                    user_id: user.user_id,
+                    admin_id: user.admin_id,
                     shop_name: user.shop_name,
                     owner_name: user.owner_name,
                     email: user.email
@@ -281,7 +258,6 @@ router.post('/logout', requireAuth, async (req, res) => {
                 console.error('Logout error:', err);
                 return res.status(500).json({ error: 'Error during logout' });
             }
-            
             res.clearCookie('agricrm.sid');
             res.json({ message: 'Logout successful' });
         });
@@ -291,22 +267,24 @@ router.post('/logout', requireAuth, async (req, res) => {
     }
 });
 
-// Get user info
+// Get current admin info
 router.get('/me', requireAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT user_id, shop_name, owner_name, owner_phone, shop_address, pincode, email, tehsil, district, created_at FROM users WHERE user_id = $1',
-            [req.session.user_id]
+            `SELECT admin_id, shop_name, owner_name, owner_phone, shop_address,
+                    pincode, email, tehsil, district, created_at
+             FROM admin WHERE admin_id = $1`,
+            [req.session.admin_id]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'Admin not found' });
         }
 
         res.json({ user: result.rows[0] });
 
     } catch (error) {
-        console.error('Get user info error:', error);
+        console.error('Get admin info error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -314,10 +292,10 @@ router.get('/me', requireAuth, async (req, res) => {
 // Check auth
 router.get('/check-auth', async (req, res) => {
     try {
-        if (req.session && req.session.user_id) {
+        if (req.session && req.session.admin_id) {
             const result = await pool.query(
-                'SELECT user_id, shop_name, owner_name, email FROM users WHERE user_id = $1',
-                [req.session.user_id]
+                'SELECT admin_id, shop_name, owner_name, email FROM admin WHERE admin_id = $1',
+                [req.session.admin_id]
             );
 
             if (result.rows.length > 0) {
@@ -325,7 +303,7 @@ router.get('/check-auth', async (req, res) => {
                 res.json({
                     authenticated: true,
                     user: {
-                        user_id: user.user_id,
+                        admin_id: user.admin_id,
                         shop_name: user.shop_name,
                         owner_name: user.owner_name,
                         email: user.email
