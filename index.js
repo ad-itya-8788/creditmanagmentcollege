@@ -316,12 +316,12 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log('=================================');
-    console.log('  AgriCRM Server - Localhost');
+    console.log('  AgriCRM Server');
     console.log('=================================');
-    console.log(`Server: http://localhost:${PORT}`);
-    console.log(`Login: http://localhost:${PORT}/login`);
+    console.log(`Server: http://0.0.0.0:${PORT}`);
+    console.log(`Login: http://0.0.0.0:${PORT}/login`);
     console.log('=================================');
 });
 
