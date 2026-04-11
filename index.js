@@ -1,45 +1,30 @@
-// Load environment variables from .env file
 require('dotenv').config();
 
 const express = require('express');
 const path    = require('path');
 const db      = require('./dbconnect');
-
-// Import route handlers
 const { router: authRouter, sessionMiddleware, requireAuth } = require('./routes/auth');
 const customerRouter = require('./routes/customer');
-const usersRouter    = require('./routes/users');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// -------------------------------------------------------------------
-// Template engine setup (EJS)
-// -------------------------------------------------------------------
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// -------------------------------------------------------------------
-// Basic middleware
-// -------------------------------------------------------------------
 app.use(express.json());                                   // Parse JSON bodies
 app.use(express.urlencoded({ extended: true }));           // Parse form data
 app.use(express.static(path.join(__dirname, 'public')));   // Serve static files
 app.use(sessionMiddleware);                                // Session handling
 
-// -------------------------------------------------------------------
-// SQL helper: sums total payments per transaction
-// Used in dashboard and report queries to compute paid/remaining
-// -------------------------------------------------------------------
+
 const PAID_PER_TRANSACTION = `(
     SELECT transaction_id, SUM(amount) AS paid
     FROM payment_logs
     GROUP BY transaction_id
 ) ps`;
 
-// ===================================================================
-// PUBLIC ROUTES — No login required
-// ===================================================================
 
 // Home page
 app.get('/', (req, res) => {
@@ -56,16 +41,8 @@ app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
-// ===================================================================
-// PROTECTED ROUTES — Login required (requireAuth middleware)
-// ===================================================================
 
-// -------------------------------------------------------------------
-// Dashboard page
-// Shows summary stats: customers, transactions, credit given, pending
-// -------------------------------------------------------------------
 app.get('/dashboard', requireAuth, async (req, res) => {
-    // Default stats used when the DB query fails
     const emptyStats = {
         totalCustomers: 0, newCustomersToday: 0,
         totalTransactions: 0, activeTransactions: 0,
@@ -127,10 +104,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     }
 });
 
-// -------------------------------------------------------------------
-// Customers list page
-// Shows all customers with their total credit and pending amounts
-// -------------------------------------------------------------------
+
 app.get('/customers', requireAuth, async (req, res) => {
     try {
         const result = await db.query(`
@@ -168,10 +142,7 @@ app.get('/customers', requireAuth, async (req, res) => {
     }
 });
 
-// -------------------------------------------------------------------
-// Settings page
-// Shows the admin's account info and basic usage statistics
-// -------------------------------------------------------------------
+
 app.get('/settings', requireAuth, async (req, res) => {
     try {
         // Get total customers and transactions
@@ -183,7 +154,6 @@ app.get('/settings', requireAuth, async (req, res) => {
             LEFT JOIN customer_transactions t ON c.id = t.customer_id
         `);
 
-        // Count active login sessions
         const sessionsResult = await db.query(`
             SELECT COUNT(*) AS session_count
             FROM session
@@ -212,10 +182,6 @@ app.get('/settings', requireAuth, async (req, res) => {
     }
 });
 
-// -------------------------------------------------------------------
-// Report page
-// Shows full credit report: totals, clear customers, and pending ones
-// -------------------------------------------------------------------
 app.get('/report', requireAuth, async (req, res) => {
     // Default empty data if DB fails
     const emptyReport = {
@@ -226,7 +192,6 @@ app.get('/report', requireAuth, async (req, res) => {
     };
 
     try {
-        // --- Overall summary numbers ---
         const summaryQuery = db.query(`
             SELECT
                 COUNT(DISTINCT c.id)                                     AS total_customers,
@@ -244,7 +209,6 @@ app.get('/report', requireAuth, async (req, res) => {
             LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
         `);
 
-        // --- Customers with no remaining balance (fully paid) ---
         const clearCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
@@ -268,7 +232,6 @@ app.get('/report', requireAuth, async (req, res) => {
             ORDER BY c.created_at DESC
         `);
 
-        // --- Customers with remaining balance (still pending) ---
         const pendingCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
@@ -293,7 +256,6 @@ app.get('/report', requireAuth, async (req, res) => {
             ORDER BY c.created_at DESC
         `);
 
-        // --- All customers with their totals ---
         const allCustomersQuery = db.query(`
             WITH per_customer AS (
                 SELECT
@@ -315,7 +277,6 @@ app.get('/report', requireAuth, async (req, res) => {
             ORDER BY c.created_at DESC
         `);
 
-        // Run all 4 queries at the same time for speed
         const [summaryResult, clearResult, pendingResult, allResult] = await Promise.all([
             summaryQuery, clearCustomersQuery, pendingCustomersQuery, allCustomersQuery
         ]);
@@ -340,14 +301,9 @@ app.get('/report', requireAuth, async (req, res) => {
     }
 });
 
-// ===================================================================
-// ROUTE MOUNTING
-// ===================================================================
-app.use('/auth',      authRouter);       // Login, register, logout
-app.use('/customers', customerRouter);   // Customer CRUD + transactions
-app.use('/api/users', usersRouter);      // Dashboard API, search, stats
+app.use('/auth',      authRouter);
+app.use('/customers', customerRouter);
 
-// Logout via GET (clears session and redirects to login)
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.clearCookie('agricrm.sid');
@@ -355,31 +311,19 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// -------------------------------------------------------------------
-// 404 handler — shown when no route matches
-// -------------------------------------------------------------------
+
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-// -------------------------------------------------------------------
-// Error handler — catches any unhandled errors
-// -------------------------------------------------------------------
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// -------------------------------------------------------------------
-// Start the server
-// -------------------------------------------------------------------
-app.listen(PORT, '0.0.0.0', () => {
-    console.log('=================================');
-    console.log('  AgriCRM Server');
-    console.log('=================================');
-    console.log(`Server: http://0.0.0.0:${PORT}`);
-    console.log(`Login:  http://0.0.0.0:${PORT}/login`);
-    console.log('=================================');
-});
+app.listen(3000,()=>
+{
+    console.log(`http://localhost:${3000}`)
+})
 
 module.exports = app;

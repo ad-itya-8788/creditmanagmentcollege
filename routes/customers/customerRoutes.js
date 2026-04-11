@@ -6,93 +6,25 @@ const { sanitizeInput, validateMobile } = require('./customerUtils');
 
 const router = express.Router();
 
-// -------------------------------------------------------------------
-// SQL helper: sums payments per transaction to get amount paid so far
-// Used with LEFT JOIN so transactions with no payments show paid = 0
-// -------------------------------------------------------------------
+//helper fun group by t id total amount
 const PAID_PER_TRANSACTION = `(
     SELECT transaction_id, SUM(amount) AS paid
     FROM payment_logs
     GROUP BY transaction_id
 ) ps`;
 
-// -------------------------------------------------------------------
-// GET /customers
-// Serves the main customers HTML page
-// -------------------------------------------------------------------
+//main customer.ejs page
 router.get('/', requireAuth, (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(__dirname, '../../views/customers.ejs'));
 });
 
-// -------------------------------------------------------------------
-// GET /customers/adcm
-// Serves the "Add Customer" HTML page
-// -------------------------------------------------------------------
+//add customer page
 router.get('/adcm', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../../protected/addcustomer.html'));
 });
 
-// -------------------------------------------------------------------
-// GET /customers/all
-// Shows all customers with their total credit, paid, and pending amounts
-// Supports pagination (10 customers per page)
-// -------------------------------------------------------------------
-router.get('/all', requireAuth, async (req, res) => {
-    try {
-        const page  = parseInt(req.query.page) || 1;
-        const limit = 10;
-        const skip  = (page - 1) * limit;
-
-        // Get customers with their transaction summary
-        const customers = await pool.query(`
-            WITH tx_summary AS (
-                SELECT
-                    t.customer_id,
-                    COUNT(t.id)                                             AS transaction_count,
-                    COALESCE(SUM(t.total_amount), 0)                        AS total_amount,
-                    COALESCE(SUM(COALESCE(ps.paid, 0)), 0)                  AS paid_amount,
-                    COALESCE(SUM(t.total_amount - COALESCE(ps.paid, 0)), 0) AS pending_amount
-                FROM customer_transactions t
-                LEFT JOIN ${PAID_PER_TRANSACTION} ON ps.transaction_id = t.id
-                GROUP BY t.customer_id
-            )
-            SELECT
-                c.id, c.name, c.mobile_number, c.village_city,
-                c.district, c.state, c.created_at,
-                COALESCE(ts.transaction_count, 0) AS transaction_count,
-                COALESCE(ts.total_amount, 0)      AS total_amount,
-                COALESCE(ts.pending_amount, 0)    AS pending_amount
-            FROM customers c
-            LEFT JOIN tx_summary ts ON ts.customer_id = c.id
-            ORDER BY c.created_at DESC
-            LIMIT $1 OFFSET $2
-        `, [limit, skip]);
-
-        // Get total count for pagination
-        const countResult   = await pool.query('SELECT COUNT(*) AS total FROM customers');
-        const totalCustomers = parseInt(countResult.rows[0].total);
-        const totalPages     = Math.ceil(totalCustomers / limit);
-
-        res.render('all-customers', {
-            user:            req.user,
-            customers:       customers.rows,
-            currentPage:     page,
-            totalPages:      totalPages,
-            totalCustomers:  totalCustomers
-        });
-
-    } catch (err) {
-        console.error('Error loading all customers:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// -------------------------------------------------------------------
-// POST /customers/add
-// Adds a new customer.
-// Optionally also creates their first transaction and initial payment.
-// -------------------------------------------------------------------
+//addnew customer and his new transition
 router.post('/add', requireAuth, async (req, res) => {
     const client = await pool.connect();
     try {
@@ -178,94 +110,7 @@ router.post('/add', requireAuth, async (req, res) => {
     }
 });
 
-// -------------------------------------------------------------------
-// DELETE /customers/:id
-// Deletes a customer and all their transactions (cascade)
-// -------------------------------------------------------------------
-router.delete('/:id', requireAuth, async (req, res) => {
-    const client = await pool.connect();
-    try {
-        const customerId = parseInt(req.params.id);
-
-        // Check if customer exists
-        const check = await client.query(
-            'SELECT id FROM customers WHERE id = $1',
-            [customerId]
-        );
-        if (check.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        await client.query('BEGIN');
-        await client.query('DELETE FROM customers WHERE id = $1', [customerId]);
-        await client.query('COMMIT');
-
-        res.json({ success: true, message: 'Customer deleted successfully' });
-
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error deleting customer:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        client.release();
-    }
-});
-
-// -------------------------------------------------------------------
-// GET /customers/search/:value
-// Search customers by name or phone number
-// -------------------------------------------------------------------
-router.get('/search/:value', requireAuth, async (req, res) => {
-    try {
-        const search = sanitizeInput(req.params.value);
-
-        const result = await pool.query(`
-            SELECT id, name, mobile_number, village_city, district, state, created_at
-            FROM customers
-            WHERE name ILIKE $1 OR mobile_number ILIKE $1
-            ORDER BY name
-            LIMIT 20
-        `, [`%${search}%`]);
-
-        res.json({ success: true, customers: result.rows });
-
-    } catch (err) {
-        console.error('Error searching customers:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// -------------------------------------------------------------------
-// GET /customers/details/:id
-// Returns basic customer info as JSON (used by frontend JS)
-// -------------------------------------------------------------------
-router.get('/details/:id', requireAuth, async (req, res) => {
-    try {
-        const customerId = parseInt(req.params.id);
-
-        const result = await pool.query(`
-            SELECT id, name, mobile_number, village_city, district, state,
-                   complete_address, pincode, created_at
-            FROM customers WHERE id = $1
-        `, [customerId]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        res.json({ success: true, customer: result.rows[0] });
-
-    } catch (err) {
-        console.error('Error fetching customer details:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// -------------------------------------------------------------------
-// GET /customers/report/:id
-// Renders the customer report page with all their transactions
-// and totals for paid, remaining, and overall credit
-// -------------------------------------------------------------------
+//customer Report
 router.get('/report/:id', requireAuth, async (req, res) => {
     try {
         const customerId = parseInt(req.params.id);

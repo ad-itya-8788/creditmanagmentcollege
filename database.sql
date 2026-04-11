@@ -1,19 +1,10 @@
--- ============================================================
---  AgriCRM  –  Database Setup Script
---  Run this on a fresh PostgreSQL database to create all tables.
---
+
 --  Tables:
 --    1. admin                  – shop owner / login account
 --    2. customers              – customer records
 --    3. customer_transactions  – sales / credit transactions
 --    4. payment_logs           – installment / partial payments
 --    5. session                – express-session store
--- ============================================================
-
-
--- -----------------------------------------------
--- 1. ADMIN  (shop owner / login account)
--- -----------------------------------------------
 CREATE TABLE IF NOT EXISTS admin (
     admin_id     SERIAL          PRIMARY KEY,
     shop_name    VARCHAR(100)    NOT NULL,
@@ -49,11 +40,7 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 
 
--- -----------------------------------------------
--- 3. CUSTOMER TRANSACTIONS
---    paid_amount and remaining_amount are NOT stored;
---    they are computed at query time from payment_logs.
--- -----------------------------------------------
+
 CREATE TABLE IF NOT EXISTS customer_transactions (
     id                   SERIAL          PRIMARY KEY,
     customer_id          INTEGER         NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
@@ -69,9 +56,6 @@ CREATE TABLE IF NOT EXISTS customer_transactions (
 );
 
 
--- -----------------------------------------------
--- 4. PAYMENT LOGS  (each installment / partial payment)
--- -----------------------------------------------
 CREATE TABLE IF NOT EXISTS payment_logs (
     id             SERIAL      PRIMARY KEY,
     transaction_id INTEGER     NOT NULL REFERENCES customer_transactions (id) ON DELETE CASCADE,
@@ -83,9 +67,6 @@ CREATE TABLE IF NOT EXISTS payment_logs (
 );
 
 
--- -----------------------------------------------
--- 5. SESSION  (connect-pg-simple / express-session)
--- -----------------------------------------------
 CREATE TABLE IF NOT EXISTS session (
     sid     VARCHAR         NOT NULL PRIMARY KEY,
     sess    JSON            NOT NULL,

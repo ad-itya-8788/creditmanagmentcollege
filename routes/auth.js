@@ -267,59 +267,6 @@ router.post('/logout', requireAuth, async (req, res) => {
     }
 });
 
-// Get current admin info
-router.get('/me', requireAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT admin_id, shop_name, owner_name, owner_phone, shop_address,
-                    pincode, email, tehsil, district, created_at
-             FROM admin WHERE admin_id = $1`,
-            [req.session.admin_id]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Admin not found' });
-        }
-
-        res.json({ user: result.rows[0] });
-
-    } catch (error) {
-        console.error('Get admin info error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Check auth
-router.get('/check-auth', async (req, res) => {
-    try {
-        if (req.session && req.session.admin_id) {
-            const result = await pool.query(
-                'SELECT admin_id, shop_name, owner_name, email FROM admin WHERE admin_id = $1',
-                [req.session.admin_id]
-            );
-
-            if (result.rows.length > 0) {
-                const user = result.rows[0];
-                res.json({
-                    authenticated: true,
-                    user: {
-                        admin_id: user.admin_id,
-                        shop_name: user.shop_name,
-                        owner_name: user.owner_name,
-                        email: user.email
-                    }
-                });
-            } else {
-                res.json({ authenticated: false });
-            }
-        } else {
-            res.json({ authenticated: false });
-        }
-    } catch (error) {
-        console.error('Auth check error:', error);
-        res.json({ authenticated: false });
-    }
-});
 
 module.exports = {
     router,
